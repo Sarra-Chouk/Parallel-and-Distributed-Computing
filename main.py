@@ -12,12 +12,17 @@ processes_speedup = sequential_time / multiprocessing_time
 threads_efficiency = threads_speedup / 4
 processes_efficiency = processes_speedup / 4
 
+threads_amdahl = 12 / 17
+processes_amdahl = 12 / 17
+
+threads_gustafson = 5 + (6*17)
+processes_gustafson = 5 + (6*17)
+
 print(f"Threads Speedup: {threads_speedup}")
 print(f"Processes Speedup: {processes_speedup}")
 print(f"Threads Efficiency: {threads_efficiency}")
 print(f"Processes Efficiency: {processes_efficiency }")
-
-# remianing tasks
-# 1. do amdhal's
-# 2. do Gustaffson's
-# 3. do the tests folder
+print(f"Threads Amdahl's: {threads_amdahl}")
+print(f"Processes Amdahl's: {processes_amdahl}")
+print(f"Threads Gustafson's: {threads_gustafson}")
+print(f"Processes Gustafson's: {processes_gustafson }")
