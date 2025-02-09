@@ -12,11 +12,11 @@ processes_speedup = sequential_time / multiprocessing_time
 threads_efficiency = threads_speedup / 4
 processes_efficiency = processes_speedup / 4
 
-threads_amdahl = 12 / 17
-processes_amdahl = 12 / 17
+threads_amdahl = 1 / ((1-(12/17)) + (12/17)/6)
+processes_amdahl = 1 / ((1-(18/24)) + (18/24)/6)
 
-threads_gustafson = 5 + (6*17)
-processes_gustafson = 5 + (6*17)
+threads_gustafson = 5 + (6*(12/17))
+processes_gustafson = 5 + (6*(18/24))
 
 print(f"Threads Speedup: {threads_speedup}")
 print(f"Processes Speedup: {processes_speedup}")
