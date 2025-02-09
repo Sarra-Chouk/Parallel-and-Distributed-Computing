@@ -1,40 +1,35 @@
-from src.generate_random import join_random_letters, add_random_numbers
+from src.calculate_sum import calculate_sum
 import multiprocessing
 import time
 
-def run_processes(n_letters=100000, n_numbers=100000):
-    total_start_time = time.time()
-    
-    # Calculate chunk sizes for letters and numbers
-    chunk_size_letters = n_letters // 3
-    chunk_size_numbers = n_numbers // 3
+# Function to run summation using multiprocessing
+def run_multiprocessing(k, num_processes):
+    # Use Manager to create a shared list
+    with multiprocessing.Manager() as manager:
+        results = manager.list([0] * num_processes)
 
-    # Create 3 processes for join_random_letters
-    process_letters_1 = multiprocessing.Process(target=join_random_letters, args=(0, chunk_size_letters))
-    process_letters_2 = multiprocessing.Process(target=join_random_letters, args=(chunk_size_letters, 2 * chunk_size_letters))
-    process_letters_3 = multiprocessing.Process(target=join_random_letters, args=(2 * chunk_size_letters, n_letters))
-    
-    # Create 3 processes for add_random_numbers
-    process_numbers_1 = multiprocessing.Process(target=add_random_numbers, args=(0, chunk_size_numbers))
-    process_numbers_2 = multiprocessing.Process(target=add_random_numbers, args=(chunk_size_numbers, 2 * chunk_size_numbers))
-    process_numbers_3 = multiprocessing.Process(target=add_random_numbers, args=(2 * chunk_size_numbers, n_numbers))
-    
-    # Start all processes
-    process_letters_1.start()
-    process_letters_2.start()
-    process_letters_3.start()
-    process_numbers_1.start()
-    process_numbers_2.start()
-    process_numbers_3.start()
-    
-    # Wait for all processes to complete
-    process_letters_1.join()
-    process_letters_2.join()
-    process_letters_3.join()
-    process_numbers_1.join()
-    process_numbers_2.join()
-    process_numbers_3.join()
-    
-    total_end_time = time.time()
-    print(f"Total time taken (processes): {total_end_time - total_start_time} seconds")
-    return total_end_time - total_start_time
+        chunk_size = k // num_processes
+        total_start_time = time.time()
+
+        # Create and start processes
+        processes = []
+        for i in range(num_processes):
+            start = i * chunk_size + 1
+            end = k if i == num_processes - 1 else (i + 1) * chunk_size
+            process = multiprocessing.Process(target=calculate_sum, args=(start, end, results, i))
+            processes.append(process)
+            process.start()
+
+        # Wait for all processes to finish
+        for process in processes:
+            process.join()
+
+        # Aggregate results from all processes
+        total_sum = sum(results)
+        total_end_time = time.time()
+
+        elapsed_time = total_end_time - total_start_time
+        print(f"Sum: {total_sum}")
+        print(f"Total time taken (multiprocessing): {elapsed_time} seconds")
+
+    return total_sum, elapsed_time

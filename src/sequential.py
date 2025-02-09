@@ -1,13 +1,12 @@
-from src.generate_random import join_random_letters, add_random_numbers
+from src.calculate_sum import calculate_sum
 import time
 
 
-# Measure the total time for both operations
-def run_sequential(end_letters = 10000, end_numbers = 100000):
+# Measure the total time for sum operation
+def run_sequential(k = 1000000):
     total_start_time = time.time()
-    join_random_letters(end = end_letters)
-    add_random_numbers(end = end_numbers)
+    total_sum = calculate_sum(end=k)
     total_end_time = time.time()
-    print(f"Total time taken (sequential): {total_end_time - total_start_time} seconds")
-    return total_end_time - total_start_time
-   
+    elapsed_time = total_end_time - total_start_time
+    print(f"Sum: {total_sum}\nTotal time taken: {elapsed_time} seconds")
+    return total_sum, elapsed_time
