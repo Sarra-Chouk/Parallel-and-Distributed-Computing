@@ -4,7 +4,6 @@ import threading
 import time
 
 
-
 # Function to run summation using threading
 def run_threading(k, num_threads):
     threading_queue = queue.Queue()
@@ -32,7 +31,6 @@ def run_threading(k, num_threads):
     for _ in range(num_threads):
         result = threading_queue.get()
         total_sum += result
-    total_sum += k
     total_end_time = time.time()
 
     elapsed_time = total_end_time - total_start_time
