@@ -1,4 +1,4 @@
 # Description
 This repository is used for the course and lab materials of the DSAI3202 (Parallel and Distributed Computing) course.
 
-This is lab02: Fisrt Parallel Programs.
+This is lab03 part 1.
