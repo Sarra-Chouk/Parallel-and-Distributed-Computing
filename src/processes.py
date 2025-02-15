@@ -1,43 +1,69 @@
-from src.calculate_sum import calculate_sum
 import multiprocessing
 import time
+from math import sqrt
+from itertools import product
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 
+def evaluate_params(args):
+    n_estimators, max_features, max_depth, X_train, y_train, X_val, y_val = args
+    # Create and train the model
+    rf_model = RandomForestRegressor(
+        n_estimators=n_estimators,
+        max_features=max_features,
+        max_depth=max_depth,
+        random_state=42
+    )
+    rf_model.fit(X_train, y_train)
 
-def run_multiprocessing(k, num_processes):
-    # Create a multiprocessing queue for sharing results
-    multiprocessing_queue = multiprocessing.Queue()
+    # Make predictions and calculate RMSE and MAPE
+    y_val_pred = rf_model.predict(X_val)
+    rmse = sqrt(mean_squared_error(y_val, y_val_pred))
+    mape = mean_absolute_percentage_error(y_val, y_val_pred) * 100
 
-    processes = []
-    chunk_size = k // num_processes
+    # Print the current combination's results
+    print(f"Parameters: n_estimators={n_estimators}, max_features={max_features}, "
+          f"max_depth={max_depth}. RMSE: {rmse}, MAPE: {mape}%")
+    
+    return (rmse, mape, rf_model, {'n_estimators': n_estimators, 'max_features': max_features, 'max_depth': max_depth})
 
-    total_start_time = time.time()
+def processes_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size=8):
+    start_time = time.time()
 
-    # Creating and starting processes
-    for i in range(num_processes):
-        start = i * chunk_size + 1
-        # Ensure the end value is exactly k for the last process
-        end = k if i == num_processes - 1 else (i + 1) * chunk_size
-        process = multiprocessing.Process(
-            target=calculate_sum, 
-            args=(start, end, multiprocessing_queue)
-        )
-        processes.append(process)
-        process.start()
+    # Define the parameter ranges
+    n_estimators_range = [10, 25, 50, 100, 200, 300, 400]
+    max_features_range = ['sqrt', 'log2', None]
+    max_depth_range = [1, 2, 5, 10, 20, None]
 
-    # Waiting for all processes to complete
-    for process in processes:
-        process.join()
+    # Generate all parameter combinations
+    param_combinations = list(product(n_estimators_range, max_features_range, max_depth_range))
+    total_tasks = len(param_combinations)
+    print(f"Starting Hyperparameter Tuning with {total_tasks} total tasks using a pool of {pool_size} processes...\n")
 
-    # Aggregating results from all processes
-    total_sum = 0
-    for _ in range(num_processes):
-        result = multiprocessing_queue.get()
-        total_sum += result
+    # Prepare arguments for each task
+    args = [(n, mf, md, X_train, y_train, X_val, y_val) for n, mf, md in param_combinations]
 
-    total_end_time = time.time()
-    elapsed_time = total_end_time - total_start_time
+    # Create a pool of processes
+    with multiprocessing.Pool(processes=pool_size) as pool:
+        results = pool.map(evaluate_params, args)
 
-    print(f"Sum: {total_sum}")
-    print(f"Total time taken: {elapsed_time} seconds")
+    # Evaluate results
+    best_rmse = float('inf')
+    best_mape = float('inf')
+    best_model = None
+    best_parameters = {}
 
-    return total_sum, elapsed_time
+    for rmse, mape, model, parameters in results:
+        if rmse < best_rmse:
+            best_rmse = rmse
+            best_mape = mape
+            best_model = model
+            best_parameters = parameters
+
+    execution_time = time.time() - start_time
+
+    print(f"\nBest Parameters: {best_parameters} | RMSE = {best_rmse}, MAPE = {best_mape}%")
+    print(f"\nProcesses (Pool) Execution Time: {execution_time:.2f} seconds")
+    print(f"\nTotal Tasks Processed: {total_tasks}")
+
+    return best_parameters, best_model, best_rmse, best_mape, execution_time, total_tasks

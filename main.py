@@ -1,47 +1,93 @@
-from src.sequential import run_sequential
-from src.threads import run_threading
-from src.processes import run_multiprocessing
 import time
 
+start_time = time.time()
 
-# Define the value of n, number of threads and processes
-K = int(1e8)
-NUM_THREADS = 5
-NUM_PROCESSES = 5
+if __name__ == "__main__":
+    from src.data_loader import load_data
+    from src.preprocessing import clean_data, encode_categorical_features, fill_missing_values
+    from src.model import split_data, train_model, predict_model
+    from src.evaluation import evaluate_model
+    from src.sequential import sequential_hyperparameter_tuning
+    from src.threads import threaded_hyperparameter_tuning
+    from src.processes import processes_hyperparameter_tuning
 
-print("\n--- Running Sequential Summation ---")
+    # Load dataset
+    file_path = 'datasets/train.csv'
+    train_data = load_data(file_path)
 
-sequential_sum, sequential_time = run_sequential(K)
+    # Clean the dataset
+    train_data_cleaned = clean_data(train_data)
 
-print("\n--- Running Threaded Summation ---")
+    # Separate features (X) and target variable (y)
+    X = train_data_cleaned.drop('SalePrice', axis=1)
+    y = train_data_cleaned['SalePrice']
 
-threaded_sum, threaded_time = run_threading(K, NUM_THREADS)
-threads_speedup = sequential_time / threaded_time
-threads_efficiency = threads_speedup / NUM_THREADS
-alpha_threads = 5.7220458984375e-06 / 3.0874314308166504 # sequential time (WITH run_threading commented) / total time (WITHOUT run_threading commented)
-p_threads = 1 - alpha_threads
-threads_amdahl = 1 / ((1 - p_threads) + (p_threads / 6))
-threads_gustafson = 6 + alpha_threads*(1-6)
+    # Encode categorical features
+    X, label_encoders = encode_categorical_features(X)
 
-print(f"Speedup: {threads_speedup}")
-print(f"Efficiency: {threads_efficiency}")
-print(f"Amdahl's: {threads_amdahl}")
-print(f"Gustafson's: {threads_gustafson}")
+    # Display the first few rows to confirm
+    print("\n---------- First Few Rows of Cleaned and Preprocessed Dataset ----------\n")
+    print(X.head())
 
-total_start_time = time.time()
-print("\n--- Running Multiprocessed Summation ---")
+    # Split the dataset
+    X_train, X_val, y_train, y_val = split_data(X, y)
 
-multiprocesses_sum, multiprocessed_time = run_multiprocessing(K, NUM_PROCESSES)
-total_end_time = time.time()
-print(total_end_time-total_start_time)
-processes_speedup = sequential_time / multiprocessed_time
-processes_efficiency = processes_speedup / NUM_PROCESSES
-alpha_processes = 5.7220458984375e-06 / 0.7608044147491455 # sequential time (with run_multiprocessing commented) / total time (without run_multiprocessing commented)
-p_processes = 1 - alpha_threads
-processes_amdahl = 1 / ((1 - p_processes) + (p_processes / 6))
-processes_gustafson = 6 + alpha_processes*(1-6)
+    # Fill NaN values in X_train and X_val with the median of the respective columns
+    X_train_filled, X_val_filled = fill_missing_values(X_train, X_val)
 
-print(f"Speedup: {processes_speedup}")
-print(f"Efficiency: {processes_efficiency}")
-print(f"Amdahl's: {processes_amdahl}")
-print(f"Gustafson's: {processes_gustafson}")
+    # Train the model on the training data
+    rf_model = train_model(X_train_filled, y_train)
+
+    # Evaluate model (Internally calls predict_model)
+    rmse = evaluate_model(rf_model, X_val_filled, y_val)
+
+    # Print results
+    print(f'\n---------- First Model Evaluation ----------\n\nRMSE on the validation data: {rmse}')
+
+    # Run sequential Hhperparameter tuning
+    print("\n---------- Running Sequential Hyperparameter Tuning ----------\n")
+    best_params_seq, best_model_seq, best_rmse_seq, best_mape_seq, sequential_time = sequential_hyperparameter_tuning(X_train, y_train, X_val, y_val)
+
+    # Run threaded hyperparameter tuning
+    print("\n---------- Running Threaded Hyperparameter Tuning ----------\n")
+    best_params_thread, best_model_thread, best_rmse_thread, best_mape_thread, threaded_time, num_threads = threaded_hyperparameter_tuning(X_train, y_train, X_val, y_val, 50)
+    
+    end_time_threads = time.time()
+    time_threads = end_time_threads - start_time
+    time_no_threads = end_time_threads - start_time # Comment the threaded hyperparameter tuning to compute this
+    #print(time_no_threads)
+
+    # Run multiprocessed hyperparameter tuning
+    print("\n---------- Running Multiprocessed Hyperparameter Tuning ----------\n")
+    best_params_process, best_model_process, best_rmse_process, best_mape_process, multiprocessed_time, num_processes = processes_hyperparameter_tuning(X_train, y_train, X_val, y_val, 50)
+
+    end_time_processes = time.time()
+    time_processes = end_time_processes - start_time
+    time_no_processes = end_time_processes - start_time # Comment the threaded hyperparameter tuning to compute this
+    #print(time_no_processes)
+
+    # Compute Speedup, Efficiency, Amdahl's Law, and Gustafson’s Law for threading
+    threads_speedup = sequential_time / threaded_time
+    threads_efficiency = threads_speedup / num_threads
+    alpha_threads = 67.74113202095032 / time_threads
+    p_threads = 1 - alpha_threads
+    threads_amdahl = 1 / ((1 - p_threads) + (p_threads / 6))
+    threads_gustafson = 6 + alpha_threads*(1-6)
+
+    # Compute Speedup, Efficiency, Amdahl's Law, and Gustafson’s Law for multiprocessing
+    processes_speedup = sequential_time / multiprocessed_time
+    processes_efficiency = processes_speedup / num_processes
+    alpha_processes = 91.22291922569275 / time_processes
+    p_processes = 1 - alpha_processes
+    processes_amdahl = 1 / ((1 - p_processes) + (p_processes / 6))
+    processes_gustafson = 6 + alpha_processes*(1-6)
+
+    print("\n----------Performance Evaluation Metrics ----------\n")
+    print(f"Threads Speedup: {threads_speedup}")
+    print(f"Threads Efficiency: {threads_efficiency}")
+    print(f"Threads Amdahl's: {threads_amdahl}")
+    print(f"Threads Gustafson's: {threads_gustafson}")
+    print(f"\nProcesses Speedup: {processes_speedup}")
+    print(f"Processes Efficiency: {processes_efficiency}")
+    print(f"Processes Amdahl's: {processes_amdahl}")
+    print(f"Processes Gustafson's: {processes_gustafson}")
