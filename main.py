@@ -53,8 +53,9 @@ if __name__ == "__main__":
     best_params_thread, best_model_thread, best_rmse_thread, best_mape_thread, threaded_time, num_threads = threaded_hyperparameter_tuning(X_train, y_train, X_val, y_val, 50)
     
     end_time_threads = time.time()
-    time_threads = end_time_threads - start_time
-    time_no_threads = end_time_threads - start_time # Comment the threaded hyperparameter tuning to compute this
+    time_threads = end_time_threads - start_time # Comment Sequential hyperparameter tuning to compute this
+    time_no_threads = end_time_threads - start_time # Comment sequential and threaded hyperparameter tuning to compute this
+    #print(time_threads)
     #print(time_no_threads)
 
     # Run multiprocessed hyperparameter tuning
@@ -62,14 +63,15 @@ if __name__ == "__main__":
     best_params_process, best_model_process, best_rmse_process, best_mape_process, multiprocessed_time, num_processes = processes_hyperparameter_tuning(X_train, y_train, X_val, y_val, 50)
 
     end_time_processes = time.time()
-    time_processes = end_time_processes - start_time
-    time_no_processes = end_time_processes - start_time # Comment the threaded hyperparameter tuning to compute this
+    time_processes = end_time_processes - start_time # Comment sequential and threaded hyperparameter tuning to compute this
+    time_no_processes = end_time_processes - start_time # Comment sequential, threaded and multiprocessed hyperparameter tuning to compute this
+    #print(time_processes)
     #print(time_no_processes)
 
     # Compute Speedup, Efficiency, Amdahl's Law, and Gustafson’s Law for threading
     threads_speedup = sequential_time / threaded_time
     threads_efficiency = threads_speedup / num_threads
-    alpha_threads = 67.74113202095032 / time_threads
+    alpha_threads = 1.8289620876312256 / 24.992754459381104
     p_threads = 1 - alpha_threads
     threads_amdahl = 1 / ((1 - p_threads) + (p_threads / 6))
     threads_gustafson = 6 + alpha_threads*(1-6)
@@ -77,7 +79,7 @@ if __name__ == "__main__":
     # Compute Speedup, Efficiency, Amdahl's Law, and Gustafson’s Law for multiprocessing
     processes_speedup = sequential_time / multiprocessed_time
     processes_efficiency = processes_speedup / num_processes
-    alpha_processes = 91.22291922569275 / time_processes
+    alpha_processes = 1.8289620876312256 / 15.365653991699219 # Used same total time found in threaded because negligeable difference
     p_processes = 1 - alpha_processes
     processes_amdahl = 1 / ((1 - p_processes) + (p_processes / 6))
     processes_gustafson = 6 + alpha_processes*(1-6)
@@ -90,4 +92,4 @@ if __name__ == "__main__":
     print(f"\nProcesses Speedup: {processes_speedup}")
     print(f"Processes Efficiency: {processes_efficiency}")
     print(f"Processes Amdahl's: {processes_amdahl}")
-    print(f"Processes Gustafson's: {processes_gustafson}")
+    print(f"Processes Gustafson's: {processes_gustafson}\n")
