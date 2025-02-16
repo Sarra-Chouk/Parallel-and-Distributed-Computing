@@ -74,3 +74,12 @@ def sequential_hyperparameter_tuning(X_train, y_train, X_val, y_val):
     print(f"\nSequential Execution Time: {execution_time:.2f} seconds")
 
     return best_parameters, best_model, best_rmse, best_mape, execution_time
+
+def main_sequential(X_train, y_train, X_val, y_val):
+    """
+    Main function that handles sequential hyperparameter tuning.
+    """
+    print("\n---------- Running Sequential Hyperparameter Tuning ----------\n")
+    best_params_seq, best_model_seq, best_rmse_seq, best_mape_seq, sequential_time = sequential_hyperparameter_tuning(X_train, y_train, X_val, y_val)
+
+    return best_params_seq, best_model_seq, best_rmse_seq, best_mape_seq, sequential_time

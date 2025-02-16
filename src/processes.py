@@ -63,7 +63,16 @@ def processes_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size=8)
     execution_time = time.time() - start_time
 
     print(f"\nBest Parameters: {best_parameters} | RMSE = {best_rmse}, MAPE = {best_mape}%")
-    print(f"\nProcesses (Pool) Execution Time: {execution_time:.2f} seconds")
+    print(f"\nMultiprocessing Execution Time: {execution_time:.2f} seconds")
     print(f"\nTotal Tasks Processed: {total_tasks}")
 
     return best_parameters, best_model, best_rmse, best_mape, execution_time, total_tasks
+
+def main_multiprocessing(X_train, y_train, X_val, y_val, pool_size=50):
+    """
+    Main function that handles multiprocessed hyperparameter tuning.
+    """
+    print("\n---------- Running Multiprocessed Hyperparameter Tuning ----------\n")
+    best_params_process, best_model_process, best_rmse_process, best_mape_process, multiprocessed_time, num_processes = processes_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size)
+
+    return best_params_process, best_model_process, best_rmse_process, best_mape_process, multiprocessed_time, num_processes

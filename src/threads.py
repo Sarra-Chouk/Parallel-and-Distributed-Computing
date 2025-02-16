@@ -82,7 +82,16 @@ def threaded_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size=8):
     execution_time = time.time() - start_time
 
     print(f"\nBest Parameters: {best_parameters} | RMSE = {best_rmse}, MAPE = {best_mape}%")
-    print(f"\nThread Pool Execution Time: {execution_time:.2f} seconds")
+    print(f"\nThreaded Execution Time: {execution_time:.2f} seconds")
     print(f"\nTotal Tasks Processed: {total_tasks}")
 
     return best_parameters, best_model, best_rmse, best_mape, execution_time, total_tasks
+
+def main_threading(X_train, y_train, X_val, y_val, pool_size=50):
+    """
+    Main function that handles threaded hyperparameter tuning.
+    """
+    print("\n---------- Running Threaded Hyperparameter Tuning ----------\n")
+    best_params_thread, best_model_thread, best_rmse_thread, best_mape_thread, threaded_time, num_threads = threaded_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size)
+
+    return best_params_thread, best_model_thread, best_rmse_thread, best_mape_thread, threaded_time, num_threads
