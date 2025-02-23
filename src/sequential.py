@@ -53,8 +53,7 @@ def sequential_hyperparameter_tuning(X_train, y_train, X_val, y_val):
                 # Compute MAPE
                 mape = mean_absolute_percentage_error(y_val, y_val_pred) * 100
                 
-                print(f"Parameters: n_estimators={n_estimators}, max_features={max_features}, "
-                      f"max_depth={max_depth}. RMSE: {rmse}, MAPE: {mape}%")
+                #print(f"Parameters: n_estimators={n_estimators}, max_features={max_features}, max_depth={max_depth}. RMSE: {rmse}, MAPE: {mape}%")
                 
                 # If the model is better than the current best, update the best model and parameters
                 if rmse < best_rmse:

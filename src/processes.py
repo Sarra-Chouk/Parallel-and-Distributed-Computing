@@ -5,8 +5,7 @@ from itertools import product
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 
-def evaluate_params(args):
-    n_estimators, max_features, max_depth, X_train, y_train, X_val, y_val = args
+def evaluate_params(n_estimators, max_features, max_depth, X_train, y_train, X_val, y_val):
     # Create and train the model
     rf_model = RandomForestRegressor(
         n_estimators=n_estimators,
@@ -21,10 +20,6 @@ def evaluate_params(args):
     rmse = sqrt(mean_squared_error(y_val, y_val_pred))
     mape = mean_absolute_percentage_error(y_val, y_val_pred) * 100
 
-    # Print the current combination's results
-    print(f"Parameters: n_estimators={n_estimators}, max_features={max_features}, "
-          f"max_depth={max_depth}. RMSE: {rmse}, MAPE: {mape}%")
-    
     return (rmse, mape, rf_model, {'n_estimators': n_estimators, 'max_features': max_features, 'max_depth': max_depth})
 
 def processes_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size=8):
@@ -43,11 +38,15 @@ def processes_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size=8)
     # Prepare arguments for each task
     args = [(n, mf, md, X_train, y_train, X_val, y_val) for n, mf, md in param_combinations]
 
-    # Create a pool of processes
+    # Create a pool of processes with starmap_async
     with multiprocessing.Pool(processes=pool_size) as pool:
-        results = pool.map(evaluate_params, args)
+        async_results = pool.starmap_async(evaluate_params, args)
+        results = async_results.get()
 
-    # Evaluate results
+    # Unzip the results into separate lists
+    rmse_list, mape_list, models, parameters_list = zip(*results)
+
+    # Evaluate results: choose the best based on RMSE
     best_rmse = float('inf')
     best_mape = float('inf')
     best_model = None

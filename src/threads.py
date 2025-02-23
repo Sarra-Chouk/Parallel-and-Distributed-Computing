@@ -25,7 +25,7 @@ def evaluate_params(args):
     mape = mean_absolute_percentage_error(y_val, y_val_pred) * 100
     
     # Print the current combination's results
-    print(f"Parameters: n_estimators={n_estimators}, max_features={max_features}, max_depth={max_depth}. RMSE: {rmse}, MAPE: {mape}%")
+    #print(f"Parameters: n_estimators={n_estimators}, max_features={max_features}, max_depth={max_depth}. RMSE: {rmse}, MAPE: {mape}%")
     
     return (rmse, mape, rf_model, {'n_estimators': n_estimators, 'max_features': max_features, 'max_depth': max_depth})
 
@@ -88,7 +88,7 @@ def threaded_hyperparameter_tuning(X_train, y_train, X_val, y_val, pool_size=8):
     return best_parameters, best_model, best_rmse, best_mape, execution_time, total_tasks
 
 def main_threading(X_train, y_train, X_val, y_val, pool_size=50):
-    """
+    """  
     Main function that handles threaded hyperparameter tuning.
     """
     print("\n---------- Running Threaded Hyperparameter Tuning ----------\n")
