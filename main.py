@@ -1,31 +1,23 @@
-import threading
-import time
-from src.sensors import simulate_sensor, process_temperatures
-from src.display import initialize_display, update_latest, update_averages
+from src.preprocessing import 
 
-def main():
-    print("\033[2J\033[H", end="")
+# Define the path to the dataset
+dataset_path = '../datasets/brain_tumor_dataset/'
 
-    initialize_display()
+# List all image files in the 'yes' and 'no' directories
+yes_images = glob.glob(dataset_path + 'yes/*.jpg')
+no_images = glob.glob(dataset_path + 'no/*.jpg')
 
-    # Start sensor threads
-    for sensor_id in [1, 2, 3]:
-        t = threading.Thread(target=simulate_sensor, args=(sensor_id,), daemon=True)
-        t.start()
+yes_images = read_images(yes_images)
+no_images = read_images(no_images)
 
-    # Start processing thread
-    processor_thread = threading.Thread(target=process_temperatures, daemon=True)
-    processor_thread.start()
+print(f"Number of 'yes' images: {len(yes_images)}")
+print(f"Number of 'no' images: {len(no_images)}")
 
-    # Start display update threads
-    latest_thread = threading.Thread(target=update_latest, daemon=True)
-    averages_thread = threading.Thread(target=update_averages, daemon=True)
-    latest_thread.start()
-    averages_thread.start()
-
-    # Keep main thread running
-    while True:
-        time.sleep(1)
-
-if __name__ == "__main__":
-    main()
+# Display each filtered image
+plt.figure(figsize=(18, 3))
+for i, (filter_name, filtered_image) in enumerate(filtered_images.items()):
+        plt.subplot(1, len(filtered_images), i + 1)
+        plt.imshow(filtered_image, cmap='gray')
+        plt.title(filter_name)
+        plt.axis('off')
+plt.show()
