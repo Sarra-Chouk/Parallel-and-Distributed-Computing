@@ -1,23 +1,11 @@
-from src.preprocessing import 
+from mpi4py import MPI
 
-# Define the path to the dataset
-dataset_path = '../datasets/brain_tumor_dataset/'
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
 
-# List all image files in the 'yes' and 'no' directories
-yes_images = glob.glob(dataset_path + 'yes/*.jpg')
-no_images = glob.glob(dataset_path + 'no/*.jpg')
-
-yes_images = read_images(yes_images)
-no_images = read_images(no_images)
-
-print(f"Number of 'yes' images: {len(yes_images)}")
-print(f"Number of 'no' images: {len(no_images)}")
-
-# Display each filtered image
-plt.figure(figsize=(18, 3))
-for i, (filter_name, filtered_image) in enumerate(filtered_images.items()):
-        plt.subplot(1, len(filtered_images), i + 1)
-        plt.imshow(filtered_image, cmap='gray')
-        plt.title(filter_name)
-        plt.axis('off')
-plt.show()
+if rank == 0:
+        data = {"a": 7, "b": 3.14}
+        comm.send(data, dest=1, tag=11)
+elif rank == 1:
+        data = comm.recv(source=0, tag=11)
+        print("On process 1, data received:", data)
