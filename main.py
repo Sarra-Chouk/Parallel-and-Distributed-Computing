@@ -11,7 +11,7 @@ from preprocessing import process_image, show_filtered_images
 
 def main():
     # === Data Loading ===
-    dataset_path = '../datasets/brain_tumor_dataset/'
+    dataset_path = 'datasets/brain_tumor_dataset/'
     yes_images, no_images = load_dataset(dataset_path)
     print(f"Number of 'yes' images: {len(yes_images)}")
     print(f"Number of 'no' images: {len(no_images)}")
@@ -39,7 +39,7 @@ def main():
     end_time_mt = time.time()
     parallel_time_mt = end_time_mt - start_time_mt
     speedup_mt = sequential_time / parallel_time_mt
-    efficiency_mt = speedup_mt / 6
+    efficiency_mt = speedup_mt / num_workers
     print(f"Multithreading execution time: {parallel_time_mt:.4f} seconds")
     print(f"Multithreading speedup: {speedup_mt:.4f}")
     print(f"Multithreading efficiency: {efficiency_mt:.4f}")
@@ -51,7 +51,7 @@ def main():
     end_time_mp = time.time()
     parallel_time_mp = end_time_mp - start_time_mp
     speedup_mp = sequential_time / parallel_time_mp
-    efficiency_mp = speedup_mp / 6
+    efficiency_mp = speedup_mp / num_workers
     print(f"Multiprocessing execution time: {parallel_time_mp:.4f} seconds")
     print(f"Multiprocessing (concurrent.futures) speedup: {speedup_mp:.4f}")
     print(f"Multiprocessing (concurrent.futures) efficiency: {efficiency_mp:.4f}")
