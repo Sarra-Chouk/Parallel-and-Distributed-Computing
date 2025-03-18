@@ -1,80 +1,46 @@
-<style>
-    .styled-title {
-        font-weight: bold;
-        font-size: 12px;
-        color: #ffffff;
-        background: linear-gradient(135deg, #007BFF, #6610f2);
-        padding: 5px 10px;
-        border-radius: 8px;
-        display: inline-block;
-    }
+## **Conclusions for Squaring 10⁶ Integers**
 
-    .final-conclusion {
-        font-weight: bold;
-        font-size: 14px;
-        color: #ffffff;
-        background-color: #007BFF;
-        padding: 10px;
-        border-radius: 8px;
-        display: inline-block;
-        margin-top: 10px;
-    }
-</style>
+#### `Sequential Execution:`
+The sequential approach is extremely fast **(0.05 sec)** for squaring 10⁶ numbers because the computation itself is trivial.
 
-### **Conclusions for Squaring 10⁶ Integers**
+#### `Process per Number:`
+Creating one process per number is **not feasible** due to **enormous memory overhead**, resulting in a **memory allocation error**.
 
-<span class="styled-title">Sequential Execution:</span>
+#### `Multiprocessing Pool:`
+- **Pool.map():** The most efficient parallel method tested **(0.14 sec)**, though still slower than sequential execution due to process management overhead.
+- **Pool.apply():** Highly **inefficient (164.69 sec)** due to its **blocking nature**.
 
-  The sequential approach is extremely fast (0.05 sec) for squaring 10⁶ numbers because the computation itself is trivial.
+#### `Concurrent Futures:`
+This method suffers from **high overhead (107.75 sec)** compared to **Pool.map()**.
 
-<span class="styled-title">Process per Number:</span>
+---
 
-  Creating one process per number is not feasible due to enormous memory overhead, resulting in a memory allocation error.
+## **Conclusions for Squaring 10⁷ Integers**
 
-<span class="styled-title">Multiprocessing Pool:</span>
+#### `Sequential Execution:`
+The sequential approach remains extremely fast **(0.54 sec)** for squaring 10⁷ numbers because it avoids parallel overhead.
 
-  Using **Pool.map()** is the most efficient among the parallel methods tested (0.14 sec), though it’s still slower than the sequential version because of process management overhead.
+#### `Process per Number:`
+Creating one process per number remains **unfeasible** due to **extreme memory overhead**, resulting in an **OSError (memory allocation failure)**.
 
-  Using **Pool.apply()** is highly inefficient (164.69 sec) due to the blocking nature of each call.
+#### `Multiprocessing Pool:`
+- **Pool.map():** Most efficient parallel method **(1.19 sec)**, though still slower than sequential execution due to process overhead.
+- **Pool.map_async():** Slightly **improves performance (1.09 sec)** compared to synchronous mapping.
+- **Pool.apply():** **Highly inefficient (1684.80 sec)** due to blocking execution.
+- **Pool.apply_async():** **Better than `apply()` (533.68 sec)** but much slower than `Pool.map()`.
 
-<span class="styled-title">Concurrent Futures:</span>
+#### `Concurrent Futures:`
+**High overhead (1099.29 sec)** compared to **Pool.map()**, making it inefficient for a simple computation.
 
-  This method also suffers from high overhead (107.75 sec) compared to **Pool.map()**.
+### `Final Conclusion:`
+For squaring large numbers, **sequential execution is the fastest** due to minimal overhead. **Pool.map() is the best parallel approach**, but multiprocessing adds unnecessary complexity for simple arithmetic tasks.
 
-### **Conclusions for Squaring 10⁷ Integers**
+---
 
-<span class="styled-title">Sequential Execution:</span>
+## **Observations on Process Synchronization with Semaphores**
 
-  The sequential approach is also extremely fast (0.54 sec) for squaring 10⁷ numbers because the computation itself is trivial and avoids parallel overhead.
+#### `Handling More Processes Than Available Connections:`
+When more processes request connections than available, **extra processes wait** until a connection is released. This ensures **only 3 processes access the resource at a time** (according to my example).
 
-<span class="styled-title">Process per Number:</span>
-
-  Creating one process per number remains unfeasible due to extreme memory overhead, resulting in an **OSError (memory allocation failure)**. This approach is highly inefficient.
-
-<span class="styled-title">Multiprocessing Pool:</span>
-
-  Using **Pool.map()** is again the most efficient parallel approach (1.19 sec), though it is still slower than sequential execution due to process management overhead.
-
-  Using **Pool.map_async()** slightly improves performance compared to the synchronous mapping (1.09 sec), benefiting from asynchronous execution.
-
-  Using **Pool.apply()** is highly inefficient (1684.80 sec) because it blocks execution for each number, making it significantly slower than all other methods.
-
-  Using **Pool.apply_async()** is an improvement over **apply()** (533.68 sec) but still much slower than **Pool.map()** due to individual function calls.
-
-<span class="styled-title">Concurrent Futures:</span>
-
-  This method also suffers from high overhead (1099.29 sec) compared to **Pool.map()**, making it inefficient for such a simple computation.
-
-<span class="final-conclusion">**Final Conclusion:**</span>
-
-For squaring large numbers, **sequential execution remains the fastest** due to minimal overhead. **Pool.map()** is the best parallel approach, but multiprocessing generally adds unnecessary complexity for simple arithmetic operations.
-
-### **Observations on Process Synchronization with Semaphores**
-
-<span class="styled-title">Handling More Processes Than Available Connections:</span>
-
-  When more processes request connections than are available, the extra processes **wait** until a connection is released. This ensures that no more than the allowed number of processes (3 in this case) access the resource simultaneously.
-
-<span class="styled-title">Role of Semaphore in Preventing Race Conditions:</span>
-
-  The semaphore **restricts concurrent access** to the number of available connections. It ensures that when a process acquires a connection, no other process can access the same connection until it is released. This prevents **data corruption and conflicts**, maintaining controlled and safe access.
+#### `Role of Semaphore in Preventing Race Conditions:`
+Semaphores **restrict concurrent access** to match available connections. When a process **acquires a connection**, others **must wait** until it is released. This prevents **data corruption and conflicts**, ensuring **safe access**.
