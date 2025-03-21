@@ -53,15 +53,13 @@ The key parallelized parts are:
 
 #### `Performance Metrics:`
 
-- **Best total distance:** 1380
-
 - **Sequential execution time:** 25.02 seconds
 
- -**Parallel execution time:** 4.36 seconds
+- **Execution time:** 4.36 seconds
 
 - **Speedup:** 5.73
 
-- **Efficiency:** 0.96
+- **Efficiency:** 96%
 
 #### `Performance Analysis:`
 
@@ -70,3 +68,55 @@ The key parallelized parts are:
 - The efficiency of 96% indicates that resources were utilized effectively, with minimal overhead.
 
 - The final solution's total distance was 1380.0, showing that the parallel approach maintained a comparable solution quality.
+
+---
+
+## **Distributed Version Conclusions**
+
+#### `Distribution Approach:`
+
+To improve performance, the Genetic Algorithm was parallelized and distributed across 2 machines using MPI. The core approach involved:
+
+`1. Master-Worker Architecture:`
+
+- Rank 0 (Master Process) initializes the population, parameters, and distance matrix.
+
+- It then scatters population chunks to other MPI processes (workers) for parallel evolution.
+
+`2. Parallel Evolution of Chunks:`
+
+- Each worker process evolves a subset of the population using multiprocessing `(Pool.starmap())`.
+
+- Selection, crossover, and mutation are applied independently per worker, reducing computation time.
+
+`3. Gathering and Selecting the Best Route:`
+
+- Each worker returns its best route after local evolution.
+
+- The master process collects all results and determines the global best route.
+
+#### `Performance Metrics:`
+
+##### `Distribution using 1 machine`
+
+- **Execution time:** 4.41 seconds
+
+- **Speedup:** 5.68
+
+- **Efficiency:** 95%
+
+##### `Distribution using 2 machine`
+
+- **Execution time:** 4.29 seconds
+
+- **Speedup:** 5.83
+
+- **Efficiency:** 97%
+
+#### `Performance Analysis:`
+
+- The distributed version on a single machine was significantly faster than the sequential version a 5.68 speedup and a 95% efficiency.
+
+- Running across two machines further reduced execution time, achieving a 5.83 speedup and a 97% efficiency.
+
+- Distributing the Genetic Algorithm across multiple machines effectively optimized performance.
