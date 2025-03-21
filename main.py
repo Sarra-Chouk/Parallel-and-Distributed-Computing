@@ -2,7 +2,7 @@ import time
 from mpi4py import MPI
 from src.sequential.genetic_algorithm_trial import run_genetic_algorithm
 from src.parallel.genetic_algorithm_trial import run_genetic_algorithm_parallel
-from src.distributed.genetic_algorithm_trial import run_genetic_algorithm_mpi_multiproc
+from src.distributed.genetic_algorithm_trial import run_distributed_genetic_algorithm
 
 def main():
     """
@@ -31,10 +31,10 @@ def main():
         parallel_time = end_parallel_time - start_parallel_time
 
         print(f"\nTotal Parallel Execution Time: {parallel_time:.2f} seconds")
-        speedup = seq_time / parallel_time
-        efficiency = speedup / 6
-        print(f"Speedup: {speedup:.2f}")
-        print(f"Efficiency: {efficiency:.2f}\n")
+        speedup_parallel = seq_time / parallel_time
+        efficiency_parallel = speedup / 6
+        print(f"Speedup: {speedup_parallel:.2f}")
+        print(f"Efficiency: {efficiency_parallel:.2f}\n")
 
     else:
         # === Distributed Execution ===
@@ -43,13 +43,17 @@ def main():
         comm.Barrier()
 
         dist_start = time.time()
-        run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6)
+        run_distributed_genetic_algorithm()
         comm.Barrier()
         dist_end = time.time()
         dist_time = dist_end - dist_start
+        speedup_dist = 25.02 / dist_time
+        efficiency_dist = speedup_dist / 6
 
         if rank == 0:
-            print(f"\nTotal Distributed Execution Time: {dist_time:.2f} seconds\n")
+            print(f"\nTotal Distributed Execution Time: {dist_time:.2f} seconds")
+            print(f"Speedup: {speedup_dist:.2f}")
+            print(f"Efficiency: {efficiency_dist:.2f}\n")
 
 if __name__ == "__main__":
     main()

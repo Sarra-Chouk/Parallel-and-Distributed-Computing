@@ -1,148 +1,155 @@
 from mpi4py import MPI
 import numpy as np
 import pandas as pd
-import time
 from multiprocessing import Pool
-from src.distributed.genetic_algorithms_functions import (
+from src.sequential.genetic_algorithms_functions import (
     calculate_fitness,
-    generate_unique_population,
     select_in_tournament,
     order_crossover,
-    mutate
+    mutate,
+    generate_unique_population
 )
 
-# --- Vectorized fitness function for a chunk ---
-def compute_fitness_chunk(chunk, distance_matrix):
-    # Convert the chunk (list of routes) into a NumPy array.
-    routes = np.array(chunk, dtype=int)  # shape (m, n)
-    # Roll each route so that the last city connects to the first.
-    rolled = np.roll(routes, -1, axis=1)
-    # Use advanced indexing: for each route, get the distances for each leg.
-    distances = distance_matrix[routes, rolled]  # shape (m, n)
-    # Apply penalty if any leg equals 10000.
-    penalty = 1e6
-    invalid = np.any(distances == 10000, axis=1)
-    fitness = -np.sum(distances, axis=1)
-    fitness[invalid] = -penalty
-    return fitness.tolist()
+def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnation_limit):
+    """
+    Evolve a sub-population (chunk) for a given number of generations using a Genetic Algorithm.
+    
+    Parameters:
+      - chunk (list): A sub-population (list of routes).
+      - distance_matrix (np.ndarray): The distance matrix.
+      - num_generations (int): How many generations to evolve.
+      - mutation_rate (float): Mutation rate.
+      - stagnation_limit (int): Number of generations without improvement before regeneration.
+      
+    Returns:
+      - tuple: (best_solution, best_distance) from this chunk.
+    """
+    num_nodes = distance_matrix.shape[0]
+    population = chunk.copy()
+    best_fitness = float('inf')
+    stagnation_counter = 0
 
-def run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6):
+    for generation in range(num_generations):
+        # Evaluate fitness for the current population
+        fitness_values = np.array([-calculate_fitness(route, distance_matrix) for route in population])
+        current_best = np.min(fitness_values)
+
+        if current_best < best_fitness:
+            best_fitness = current_best
+            stagnation_counter = 0
+        else:
+            stagnation_counter += 1
+
+        # Regenerate population if no improvement
+        if stagnation_counter >= stagnation_limit:
+            best_individual = population[np.argmin(fitness_values)]
+            population = generate_unique_population(len(population) - 1, num_nodes)
+            population.append(best_individual)
+            stagnation_counter = 0
+            continue
+
+        # Selection, crossover, and mutation
+        selected = select_in_tournament(population, fitness_values)
+        offspring = []
+        for i in range(0, len(selected), 2):
+            if i + 1 < len(selected):
+                parent1, parent2 = selected[i], selected[i + 1]
+                route1 = order_crossover(parent1[1:], parent2[1:])
+                offspring.append([0] + route1)
+        mutated_offspring = [mutate(route, mutation_rate) for route in offspring]
+        
+        # Replace least fit individuals with offspring
+        indices = np.argsort(fitness_values)[::-1][:len(mutated_offspring)]
+        for i, idx in enumerate(indices):
+            population[idx] = mutated_offspring[i]
+
+        # Ensure population uniqueness
+        unique_population = set(tuple(ind) for ind in population)
+        while len(unique_population) < len(population):
+            individual = [0] + list(np.random.permutation(np.arange(1, num_nodes)))
+            unique_population.add(tuple(individual))
+        population = [list(ind) for ind in unique_population]
+
+    # Final evaluation and return the best individual
+    fitness_values = np.array([-calculate_fitness(route, distance_matrix) for route in population])
+    best_idx = np.argmin(fitness_values)
+    best_solution = population[best_idx]
+    best_distance = -calculate_fitness(best_solution, distance_matrix)
+    return best_solution, best_distance
+
+def run_distributed_genetic_algorithm():
+    """
+    Distributed Genetic Algorithm:
+      - The master (rank 0) loads the dataset, creates the full population,
+        and splits it into chunks.
+      - The chunks are scattered among all MPI processes.
+      - Each process evolves its sub-chunks in parallel using multiprocessing.
+      - Finally, the best results are gathered and the overall best solution is selected.
+    """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # --- Initialization on master ---
+    # Initialization by the master process
     if rank == 0:
-        distance_matrix = pd.read_csv('dataset/city_distances.csv').to_numpy(dtype=int)
+        distance_matrix = pd.read_csv('dataset/city_distances.csv').to_numpy()
         num_nodes = distance_matrix.shape[0]
         population_size = 10000
+        num_generations = 200
+        mutation_rate = 0.1
+        stagnation_limit = 5
+        num_chunks = 24
+        chunk_size = population_size // num_chunks
+
         np.random.seed(42)
-        population = generate_unique_population(population_size, num_nodes)
+        full_population = generate_unique_population(population_size, num_nodes)
+        chunks = [full_population[i * chunk_size : (i + 1) * chunk_size] for i in range(num_chunks)]
     else:
         distance_matrix = None
-        num_nodes = None
-        population_size = None
-        population = None
+        num_generations = None
+        mutation_rate = None
+        stagnation_limit = None
+        chunks = None
 
-    # Broadcast parameters (blocking bcast is fine for these small objects)
+    # Broadcast parameters to all processes
     distance_matrix = comm.bcast(distance_matrix, root=0)
-    num_nodes = comm.bcast(num_nodes, root=0)
-    population_size = comm.bcast(population_size, root=0)
+    num_generations = comm.bcast(num_generations, root=0)
+    mutation_rate = comm.bcast(mutation_rate, root=0)
+    stagnation_limit = comm.bcast(stagnation_limit, root=0)
 
-    # Genetic algorithm parameters
-    num_tournaments = 4
-    mutation_rate = 0.1
-    num_generations = 200
-    stagnation_limit = 1
-
-    # Global population is held on master.
+    # Scatter population chunks among processes
     if rank == 0:
-        global_population = population
+        chunks_split = np.array_split(chunks, size)
     else:
-        global_population = None
+        chunks_split = None
+    local_chunks = comm.scatter(chunks_split, root=0)
 
-    # Create a local multiprocessing pool once (to avoid repeated creation overhead).
-    pool = Pool(processes=local_pool_size)
+    # Evolve local chunks in parallel using multiprocessing
+    args = [
+        (chunk, distance_matrix, num_generations, mutation_rate, stagnation_limit)
+        for chunk in local_chunks
+    ]
+    with Pool(processes=len(args)) as pool:
+        local_results = pool.starmap(evolve_chunk, args)
 
-    for seg_start in range(0, num_generations, broadcast_interval):
-        # --- Non-blocking broadcast of global_population ---
-        if rank == 0:
-            global_population_np = np.array(global_population, dtype=int)
-        else:
-            global_population_np = np.empty((population_size, num_nodes), dtype=int)
-        req = comm.Ibcast(global_population_np, root=0)
-        req.Wait()
-        global_population = global_population_np.tolist()
+    # Select the best individual from this process
+    local_best_solution = None
+    local_best_distance = float('inf')
+    for solution, distance in local_results:
+        if distance < local_best_distance:
+            local_best_distance = distance
+            local_best_solution = solution
 
-        # Each process works on its local copy.
-        local_population = list(global_population)
-        local_stagnation = 0
-        best_local_fitness = float('inf')
+    # Gather best individuals from all processes
+    global_results = comm.gather((local_best_solution, local_best_distance), root=0)
 
-        for gen in range(broadcast_interval):
-            # Split local_population into chunks. (Using a larger chunksize to reduce overhead.)
-            chunk_size = max(1, len(local_population) // (local_pool_size * 2))
-            chunks = [local_population[i:i + chunk_size] for i in range(0, len(local_population), chunk_size)]
-            # Compute fitness asynchronously (using starmap_async)
-            async_result = pool.starmap_async(compute_fitness_chunk,
-                                              [(chunk, distance_matrix) for chunk in chunks])
-            fitness_lists = async_result.get()  # Wait for completion.
-            fitness_values = [val for sublist in fitness_lists for val in sublist]
-
-            current_best = min(fitness_values)
-            if current_best < best_local_fitness:
-                best_local_fitness = current_best
-                local_stagnation = 0
-            else:
-                local_stagnation += 1
-
-            if local_stagnation >= stagnation_limit:
-                best_index = fitness_values.index(min(fitness_values))
-                best_individual = local_population[best_index]
-                local_population = generate_unique_population(population_size - 1, num_nodes)
-                local_population.append(best_individual)
-                local_stagnation = 0
-
-            fitness_values = np.array(fitness_values)
-            selected = select_in_tournament(local_population, fitness_values)
-            offspring = []
-            for i in range(0, len(selected) - 1, 2):
-                child = order_crossover(selected[i][1:], selected[i + 1][1:])
-                offspring.append([0] + child)
-            mutated_offspring = [mutate(route, mutation_rate) for route in offspring]
-
-            # Replace worst individuals with offspring.
-            worst_indices = np.argsort(fitness_values)[::-1][:len(mutated_offspring)]
-            for j, idx in enumerate(worst_indices):
-                local_population[idx] = mutated_offspring[j]
-
-            # Ensure local population uniqueness.
-            unique_local = set(tuple(ind) for ind in local_population)
-            while len(unique_local) < population_size:
-                individual = [0] + list(np.random.permutation(np.arange(1, num_nodes)))
-                unique_local.add(tuple(individual))
-            local_population = [list(ind) for ind in unique_local]
-
-        # End of segment: each MPI process finds its best candidate.
-        local_fitness = [ -calculate_fitness(route, distance_matrix) for route in local_population ]
-        local_best_index = np.argmin(local_fitness)
-        local_best = local_population[local_best_index]
-        local_best_fitness = min(local_fitness)
-
-        # Gather best candidates from all processes.
-        all_best = comm.gather((local_best_fitness, local_best), root=0)
-        if rank == 0:
-            best_overall = min(all_best, key=lambda x: x[0])
-            # Update global_population to replicate the best candidate.
-            global_population = [best_overall[1]] * population_size
-        global_population = comm.bcast(global_population, root=0)
-
-    pool.close()
-    pool.join()
-
-    # Final evaluation (only master prints result)
+    # Master selects the overall best solution
     if rank == 0:
-        final_fitness = np.array([-calculate_fitness(route, distance_matrix) for route in global_population])
-        best_idx = np.argmin(final_fitness)
-        best_solution = global_population[best_idx]
-        print("Distributed Total Distance:", -calculate_fitness(best_solution, distance_matrix))
+        overall_best_solution = None
+        overall_best_distance = float('inf')
+        for solution, distance in global_results:
+            if distance < overall_best_distance:
+                overall_best_distance = distance
+                overall_best_solution = solution
+        print("Overall Best Solution:", overall_best_solution)
+        print("Overall Best Total Distance:", overall_best_distance)

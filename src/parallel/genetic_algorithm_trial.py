@@ -30,6 +30,7 @@ def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnat
 
     # Evolve over generations
     for generation in range(num_generations):
+        
         # Evaluate fitness for the current population
         fitness_values = np.array([-calculate_fitness(route, distance_matrix) for route in population])
         current_best = np.min(fitness_values)
@@ -86,6 +87,7 @@ def run_genetic_algorithm_parallel():
     Splits a large population into chunks, runs GA evolution on each in parallel,
     and selects the best overall solution.
     """
+    
     # Load distance matrix
     distance_matrix = pd.read_csv('dataset/city_distances.csv').to_numpy()
     num_nodes = distance_matrix.shape[0]
