@@ -12,9 +12,13 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 `3. Evolution Process:`
 - **Fitness Evaluation:** Computes the fitness of each route (fitness is defines as the shortest route).
+
 - **Stagnation Handling:** If no improvement is observed for 5 consecutive generations, a new population is generated while keeping the best solution.
+
 - **Selection:** Uses a tournament selection mechanism to pick individuals for reproduction.
+
 - **Crossover & Mutation:** Performs order crossover and mutation to create new routes while balancing exploitation and exploration.
+
 - **Replacement:** The worst-performing routes are replaced with new offspring.
 
 `4. Final Selection:`
@@ -23,13 +27,14 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 #### `Performance Analysis:`
 
 **Best total distance:** 1224.0
+
 **Execution time:** 25.02 seconds
 
 ---
 
 ## **Parallel Version Conclusions**
 
-#### `Prallelization Approach:`
+#### `Parallelization Approach:`
 The parallel implementation divides the **population** into multiple **chunks** and processes them concurrently using **multiprocessing**. Each chunk evolves independently using a Genetic Algorithm. 
 
 The key parallelized parts are:
@@ -48,7 +53,7 @@ The key parallelized parts are:
 
 #### `Performance Metrics:`
 
-**Best total distance:**
+**Best total distance:** 1380
 
 **Sequential execution time:** 25.02 seconds
 
