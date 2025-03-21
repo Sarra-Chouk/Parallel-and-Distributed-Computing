@@ -25,4 +25,5 @@ Finally, the evaluation module runs the trained model on the test set and prints
 
 ### How to run
 
-<pre><code>```bash pip install -r requirements.txt python main.py ``` </code></pre>
+<pre><code>```pip install -r requirements.txt 
+  python main.py ``` </code></pre>
