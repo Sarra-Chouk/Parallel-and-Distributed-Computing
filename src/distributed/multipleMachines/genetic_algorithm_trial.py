@@ -30,6 +30,7 @@ def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnat
     stagnation_counter = 0
 
     for generation in range(num_generations):
+        # Evaluate fitness for the current population
         fitness_values = np.array([-calculate_fitness(route, distance_matrix) for route in population])
         current_best = np.min(fitness_values)
 
@@ -39,6 +40,7 @@ def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnat
         else:
             stagnation_counter += 1
 
+        # Regenerate population if no improvement
         if stagnation_counter >= stagnation_limit:
             best_individual = population[np.argmin(fitness_values)]
             population = generate_unique_population(len(population) - 1, num_nodes)
@@ -46,6 +48,7 @@ def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnat
             stagnation_counter = 0
             continue
 
+        # Selection, crossover, and mutation
         selected = select_in_tournament(population, fitness_values)
         offspring = []
         for i in range(0, len(selected), 2):
@@ -55,16 +58,19 @@ def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnat
                 offspring.append([0] + route1)
         mutated_offspring = [mutate(route, mutation_rate) for route in offspring]
         
+        # Replace least fit individuals with offspring
         indices = np.argsort(fitness_values)[::-1][:len(mutated_offspring)]
         for i, idx in enumerate(indices):
             population[idx] = mutated_offspring[i]
 
+        # Ensure population uniqueness
         unique_population = set(tuple(ind) for ind in population)
         while len(unique_population) < len(population):
             individual = [0] + list(np.random.permutation(np.arange(1, num_nodes)))
             unique_population.add(tuple(individual))
         population = [list(ind) for ind in unique_population]
 
+    # Final evaluation and return the best individual
     fitness_values = np.array([-calculate_fitness(route, distance_matrix) for route in population])
     best_idx = np.argmin(fitness_values)
     best_solution = population[best_idx]
@@ -75,9 +81,9 @@ def run_distributed_genetic_algorithm_multiple():
     """
     Distributed Genetic Algorithm for multiple machines:
       - The master (rank 0) loads the dataset, creates the full population, and splits it into many chunks.
-      - The chunks are non-blockingly scattered among all MPI processes.
+      - The chunks are scattered among all MPI processes using blocking scatter.
       - Each process evolves its assigned chunks in parallel using multiprocessing.
-      - Finally, the best results are non-blockingly gathered and the overall best solution is selected.
+      - Finally, the best results are gathered using blocking gather and the overall best solution is selected.
     """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -110,16 +116,12 @@ def run_distributed_genetic_algorithm_multiple():
     mutation_rate = comm.bcast(mutation_rate, root=0)
     stagnation_limit = comm.bcast(stagnation_limit, root=0)
 
-    # Non-blocking scatter: on root, we split chunks; each process gets a Python object.
+    # Blocking scatter: on root, split chunks and scatter to all processes
     if rank == 0:
         chunks_split = np.array_split(chunks, size)
     else:
         chunks_split = None
-    # Allocate a container for the received object.
-    recv_buf = [None]
-    local_chunks_req = comm.Iscatter(chunks_split, recv_buf, root=0)
-    local_chunks_req.Wait()  # Wait for scatter to complete.
-    local_chunks = recv_buf[0]
+    local_chunks = comm.scatter(chunks_split, root=0)
 
     # Evolve local chunks in parallel using multiprocessing
     args = [
@@ -137,20 +139,14 @@ def run_distributed_genetic_algorithm_multiple():
             local_best_distance = distance
             local_best_solution = solution
 
-    # Prepare local result for non-blocking gather.
-    local_best = (local_best_solution, local_best_distance)
-    # On root, allocate a container for all results.
-    if rank == 0:
-        global_recv_buf = [None] * size
-    else:
-        global_recv_buf = None
-    global_results_req = comm.Igather(local_best, global_recv_buf, root=0)
-    global_results_req.Wait()
+    # Blocking gather to aggregate best results
+    global_results = comm.gather((local_best_solution, local_best_distance), root=0)
 
+    # Master selects overall best solution
     if rank == 0:
         overall_best_solution = None
         overall_best_distance = float('inf')
-        for solution, distance in global_recv_buf:
+        for solution, distance in global_results:
             if distance < overall_best_distance:
                 overall_best_distance = distance
                 overall_best_solution = solution
