@@ -44,3 +44,15 @@ When more processes request connections than available, **extra processes wait**
 
 #### `Role of Semaphore in Preventing Race Conditions:`
 Semaphores **restrict concurrent access** to match available connections. When a process **acquires a connection**, others **must wait** until it is released. This prevents **data corruption and conflicts**, ensuring **safe access**.
+
+---
+
+## How to run
+
+Open the notebbok:
+
+<pre><code>jupyter notebook notebooks/assignment1.part1.ipynb</code></pre>
+
+Or run `.py` files via:
+
+<pre><code>python main.py</code></pre>
