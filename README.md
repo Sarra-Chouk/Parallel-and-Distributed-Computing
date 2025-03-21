@@ -6,7 +6,7 @@ This project is Lab 01 from the DSAI3202 - Parallel and Distributed Computing co
 - Multithreading
 - Multiprocessing
 
-The program measures and compares the performance improvements using key parallel computing metrics such as:
+The program measures and compares the performance improvements using key parallel computing metrics:
 
 - Speedup
 - Efficiency
