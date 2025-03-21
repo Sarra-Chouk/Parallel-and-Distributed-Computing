@@ -51,7 +51,7 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 - **Execution time:** 61.50 seconds
 
-**Run using:**
+**`Run using:`**
 
 <pre><code>python main.py</code></pre>
 
@@ -84,7 +84,7 @@ The key parallelized parts are:
 
 - **Efficiency:** 96%
 
-- **Command to run:**
+**`Run using:`**
 
 <pre><code>python main.py</code></pre>
 
@@ -132,7 +132,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Efficiency:** 99%
 
-- **Command to run:**
+**`Run using:`**
 
 <pre><code>mpirun -n 6 python main.py</code></pre>
 
@@ -140,7 +140,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Execution time:**  10.72 seconds (network latency)
 
-- **Command to run:**
+**`Run using:`**
 
 <pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine</code></pre>
 
@@ -186,7 +186,7 @@ The distributed implementation was reused by adapting it to load the larger data
 
 - **Efficiency:** 85%
 
-- **Command to run:**
+**`Run using:`**
 
 <pre><code>mpirun -n 6 python main.py --mpi-extended</code></pre>
 
