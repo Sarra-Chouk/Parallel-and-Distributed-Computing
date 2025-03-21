@@ -12,8 +12,11 @@ def main():
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # When running without MPI (only one process), run sequential and multiprocessing experiments.
-    if size == 1:
+    # Check if the user passed the flag to run only MPI version.
+    run_only_mpi = '--mpi-only' in sys.argv
+
+    # When only one MPI process is used (or not in MPI-only mode), run sequential and multiprocessing experiments.
+    if size == 1 or (size > 1 and not run_only_mpi):
         if rank == 0:
             print("\n===== Sequential Execution =====\n")
             start_seq = time.time()
@@ -31,18 +34,21 @@ def main():
             print(f"Speedup (Parallel): {seq_time / par_time:.2f}")
             print(f"Efficiency (Parallel): {(seq_time / par_time) / 6:.2f}\n")
         comm.Barrier()
-    else:
-        # When running under MPI (size > 1), run only the MPI+Multiprocessing (distributed) experiment.
+
+    # If running under MPI (size > 1), run only the distributed experiment.
+    if size > 1:
         if rank == 0:
             print("\n===== Distributed Execution (MPI+Multiprocessing) =====\n")
         start_mpi = time.time()
-        # For example, here we use a broadcast_interval=50 and local_pool_size=6.
         run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6)
         end_mpi = time.time()
         if rank == 0:
             mpi_time = end_mpi - start_mpi
             print(f"\nTotal Distributed (MPI+Multiproc) Execution Time: {mpi_time:.2f} seconds\n")
-    # End of main()
+            # Optionally, compare with seq_time if sequential was run.
+            if size == 1:
+                print(f"Speedup (MPI+Multiproc): {seq_time / mpi_time:.2f}")
+                print(f"Efficiency (MPI+Multiproc): {(seq_time / mpi_time) / 6:.2f}")
 
 if __name__ == "__main__":
     main()

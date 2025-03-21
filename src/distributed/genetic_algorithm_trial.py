@@ -4,7 +4,7 @@ import pandas as pd
 import time
 from multiprocessing import Pool
 from src.distributed.genetic_algorithms_functions import (
-    calculate_fitness,            # The “regular” (serial) version used for selection/updating.
+    calculate_fitness,
     generate_unique_population,
     select_in_tournament,
     order_crossover,
@@ -15,23 +15,23 @@ from src.distributed.genetic_algorithms_functions import (
 def compute_fitness_chunk(chunk, distance_matrix):
     # Convert the chunk (list of routes) into a NumPy array.
     routes = np.array(chunk, dtype=int)  # shape (m, n)
-    # Create a “rolled” version so that for each route the last city connects to the first.
+    # Roll each route so that the last city connects to the first.
     rolled = np.roll(routes, -1, axis=1)
-    # Use advanced indexing to get the distances for each leg of each route.
+    # Use advanced indexing: for each route, get the distances for each leg.
     distances = distance_matrix[routes, rolled]  # shape (m, n)
-    # If any leg equals 10000, mark the entire route as infeasible (apply penalty).
+    # Apply penalty if any leg equals 10000.
     penalty = 1e6
     invalid = np.any(distances == 10000, axis=1)
     fitness = -np.sum(distances, axis=1)
     fitness[invalid] = -penalty
     return fitness.tolist()
 
-def run_genetic_algorithm_mpi_multiproc(broadcast_interval=20, local_pool_size=4):
+def run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # --- Initialization: master loads parameters and initial population ---
+    # --- Initialization on master ---
     if rank == 0:
         distance_matrix = pd.read_csv('dataset/city_distances.csv').to_numpy(dtype=int)
         num_nodes = distance_matrix.shape[0]
@@ -44,7 +44,7 @@ def run_genetic_algorithm_mpi_multiproc(broadcast_interval=20, local_pool_size=4
         population_size = None
         population = None
 
-    # Broadcast global parameters (blocking bcast for these smaller objects)
+    # Broadcast parameters (blocking bcast is fine for these small objects)
     distance_matrix = comm.bcast(distance_matrix, root=0)
     num_nodes = comm.bcast(num_nodes, root=0)
     population_size = comm.bcast(population_size, root=0)
@@ -55,37 +55,35 @@ def run_genetic_algorithm_mpi_multiproc(broadcast_interval=20, local_pool_size=4
     num_generations = 200
     stagnation_limit = 1
 
-    # Only rank 0 holds the master (global) population.
+    # Global population is held on master.
     if rank == 0:
         global_population = population
     else:
         global_population = None
 
-    # Main GA loop in segments (each segment = broadcast_interval generations)
+    # Create a local multiprocessing pool once (to avoid repeated creation overhead).
+    pool = Pool(processes=local_pool_size)
+
     for seg_start in range(0, num_generations, broadcast_interval):
-        # --- Non-blocking broadcast of the global population ---
-        # Convert global_population (list of lists) to a NumPy array for broadcast.
+        # --- Non-blocking broadcast of global_population ---
         if rank == 0:
             global_population_np = np.array(global_population, dtype=int)
         else:
             global_population_np = np.empty((population_size, num_nodes), dtype=int)
         req = comm.Ibcast(global_population_np, root=0)
         req.Wait()
-        # Convert back to list for local processing.
         global_population = global_population_np.tolist()
 
-        # Each process now works on a local copy of the population.
+        # Each process works on its local copy.
         local_population = list(global_population)
         local_stagnation = 0
         best_local_fitness = float('inf')
 
-        # Create a local multiprocessing pool.
-        pool = Pool(processes=local_pool_size)
         for gen in range(broadcast_interval):
-            # Split local_population into chunks.
-            chunk_size = max(1, len(local_population) // local_pool_size)
+            # Split local_population into chunks. (Using a larger chunksize to reduce overhead.)
+            chunk_size = max(1, len(local_population) // (local_pool_size * 2))
             chunks = [local_population[i:i + chunk_size] for i in range(0, len(local_population), chunk_size)]
-            # Compute fitness asynchronously over chunks.
+            # Compute fitness asynchronously (using starmap_async)
             async_result = pool.starmap_async(compute_fitness_chunk,
                                               [(chunk, distance_matrix) for chunk in chunks])
             fitness_lists = async_result.get()  # Wait for completion.
@@ -109,7 +107,6 @@ def run_genetic_algorithm_mpi_multiproc(broadcast_interval=20, local_pool_size=4
             selected = select_in_tournament(local_population, fitness_values)
             offspring = []
             for i in range(0, len(selected) - 1, 2):
-                # For crossover, skip the fixed first node.
                 child = order_crossover(selected[i][1:], selected[i + 1][1:])
                 offspring.append([0] + child)
             mutated_offspring = [mutate(route, mutation_rate) for route in offspring]
@@ -125,25 +122,26 @@ def run_genetic_algorithm_mpi_multiproc(broadcast_interval=20, local_pool_size=4
                 individual = [0] + list(np.random.permutation(np.arange(1, num_nodes)))
                 unique_local.add(tuple(individual))
             local_population = [list(ind) for ind in unique_local]
-        pool.close()
-        pool.join()
 
-        # Each MPI process finds its best candidate.
+        # End of segment: each MPI process finds its best candidate.
         local_fitness = [ -calculate_fitness(route, distance_matrix) for route in local_population ]
         local_best_index = np.argmin(local_fitness)
         local_best = local_population[local_best_index]
         local_best_fitness = min(local_fitness)
 
-        # Gather best candidates from all processes at master.
+        # Gather best candidates from all processes.
         all_best = comm.gather((local_best_fitness, local_best), root=0)
         if rank == 0:
             best_overall = min(all_best, key=lambda x: x[0])
             print(f"After generation {seg_start + broadcast_interval}, global best fitness: {best_overall[0]}")
-            # For the next segment, set the global population to the best candidate repeated.
+            # Update global_population to replicate the best candidate.
             global_population = [best_overall[1]] * population_size
         global_population = comm.bcast(global_population, root=0)
 
-    # Final evaluation: only master prints result.
+    pool.close()
+    pool.join()
+
+    # Final evaluation (only master prints result)
     if rank == 0:
         final_fitness = np.array([-calculate_fitness(route, distance_matrix) for route in global_population])
         best_idx = np.argmin(final_fitness)
@@ -152,4 +150,4 @@ def run_genetic_algorithm_mpi_multiproc(broadcast_interval=20, local_pool_size=4
         print("MPI+Multiproc Total Distance:", -calculate_fitness(best_solution, distance_matrix))
 
 if __name__ == "__main__":
-    run_genetic_algorithm_mpi_multiproc(broadcast_interval=20, local_pool_size=4)
+    run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6)
