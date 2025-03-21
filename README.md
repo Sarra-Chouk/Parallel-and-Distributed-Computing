@@ -5,6 +5,8 @@ It demonstrates how to structure an ML project into clearly defined stages using
 
 The focus is not just on building a working model, but also on organizing code in a way that supports scalability, readability, and parallel development.
 
+---
+
 ## Breakdown
 
 The program performs the following steps:
