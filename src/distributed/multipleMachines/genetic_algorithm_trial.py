@@ -79,74 +79,84 @@ def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnat
 
 def run_distributed_genetic_algorithm_multiple():
     """
-    Distributed Genetic Algorithm for multiple machines:
-      - The master (rank 0) loads the dataset, creates the full population, and splits it into many chunks.
-      - The chunks are scattered among all MPI processes using blocking scatter.
-      - Each process evolves its assigned chunks in parallel using multiprocessing.
-      - Finally, the best results are gathered using blocking gather and the overall best solution is selected.
+    Distributed Genetic Algorithm:
+      - The master (rank 0) loads the dataset and initializes parameters.
+      - Each process reads its portion of the data (Parallel I/O).
+      - Dynamic load balancing is used to distribute chunks of work.
+      - Each process evolves its sub-chunks in parallel using multiprocessing.
+      - Finally, the best results are gathered and the overall best solution is selected.
     """
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # Master initialization
+    # Parallel I/O: Each process reads its portion of the data
     if rank == 0:
         distance_matrix = pd.read_csv('dataset/city_distances.csv').to_numpy()
+    else:
+        distance_matrix = None
+    distance_matrix = comm.bcast(distance_matrix, root=0)
+
+    # Parameters (broadcasted by the master)
+    if rank == 0:
         num_nodes = distance_matrix.shape[0]
         population_size = 10000
         num_generations = 500
         mutation_rate = 0.1
         stagnation_limit = 5
-        num_chunks = 48  # Increased number of chunks for finer granularity
+        num_chunks = 24
         chunk_size = population_size // num_chunks
 
         np.random.seed(42)
         full_population = generate_unique_population(population_size, num_nodes)
         chunks = [full_population[i * chunk_size : (i + 1) * chunk_size] for i in range(num_chunks)]
     else:
-        distance_matrix = None
         num_generations = None
         mutation_rate = None
         stagnation_limit = None
         chunks = None
 
-    # Broadcast common parameters
-    distance_matrix = comm.bcast(distance_matrix, root=0)
+    # Broadcast parameters to all processes
     num_generations = comm.bcast(num_generations, root=0)
     mutation_rate = comm.bcast(mutation_rate, root=0)
     stagnation_limit = comm.bcast(stagnation_limit, root=0)
 
-    # Blocking scatter: on root, split chunks and scatter to all processes
+    # Dynamic Load Balancing
     if rank == 0:
-        chunks_split = np.array_split(chunks, size)
+        chunk_queue = list(chunks)  # Convert chunks to a queue
+        results = []
+        active_workers = size - 1  # Number of workers (excluding master)
+
+        while active_workers > 0 or chunk_queue:
+            status = MPI.Status()
+            data = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+            source = status.Get_source()
+
+            if data == "REQUEST":  # Worker requests a chunk
+                if chunk_queue:
+                    comm.send(chunk_queue.pop(0), dest=source)  # Send a chunk
+                else:
+                    comm.send(None, dest=source)  # No more chunks
+                    active_workers -= 1
+            else:  # Worker sends back results
+                results.append(data)
     else:
-        chunks_split = None
-    local_chunks = comm.scatter(chunks_split, root=0)
+        while True:
+            comm.send("REQUEST", dest=0)  # Request a chunk
+            chunk = comm.recv(source=0)
 
-    # Evolve local chunks in parallel using multiprocessing
-    args = [
-        (chunk, distance_matrix, num_generations, mutation_rate, stagnation_limit)
-        for chunk in local_chunks
-    ]
-    with Pool(processes=len(args)) as pool:
-        local_results = pool.starmap(evolve_chunk, args)
+            if chunk is None:  # No more chunks
+                break
 
-    # Determine best result locally
-    local_best_solution = None
-    local_best_distance = float('inf')
-    for solution, distance in local_results:
-        if distance < local_best_distance:
-            local_best_distance = distance
-            local_best_solution = solution
+            # Evolve the chunk
+            result = evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnation_limit)
+            comm.send(result, dest=0)  # Send results back to master
 
-    # Blocking gather to aggregate best results
-    global_results = comm.gather((local_best_solution, local_best_distance), root=0)
-
-    # Master selects overall best solution
+    # Master selects the overall best solution
     if rank == 0:
         overall_best_solution = None
         overall_best_distance = float('inf')
-        for solution, distance in global_results:
+        for solution, distance in results:
             if distance < overall_best_distance:
                 overall_best_distance = distance
                 overall_best_solution = solution
