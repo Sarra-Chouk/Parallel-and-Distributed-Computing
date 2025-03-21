@@ -5,6 +5,7 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 `1. Initialization:`
 - Loads a distance matrix representing travel costs between locations.
+
 - Defines key parameters such as population size (10000), mutation rate (0.1), number of generations (500), and stagnation limits (5).
 
 `2. Population Generation:`
@@ -103,9 +104,13 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Efficiency:** 99%
 
+**- Command to run:**  mpirun -n 6 python main.py
+
 ##### `Distribution using 2 machines:`
 
 - **Execution time:**  seconds
+
+**- Command to run:**  mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine
 
 #### `Performance Analysis:`
 
@@ -121,7 +126,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 #### `Extended Approach:`
 
-- The distributed implementation was reused by adapting it to load the larger dataset **(city_distances_extended.csv)** and executed using the command `mpirun -n 6 python main.py --mpi-extended`.
+The distributed implementation was reused by adapting it to load the larger dataset **(city_distances_extended.csv)**.
 
 #### `Performance Metrics:`
 
@@ -131,10 +136,18 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Efficiency:** 85%
 
+**- Command to run:** mpirun -n 6 python main.py --mpi-extended
+
 #### `Performance Analysis:`
 
 - The extended version demonstrated strong scalability and effective parallel utilization even with a larger dataset, achieving a speedup of 5.09 and an efficiency of 85%.
 
 #### `How can we add more cars to the problem?`
 
-- To add more cars, we would change the solution representation so that each individual is a set of routes—one route per car—instead of a single route. The fitness function would then calculate the total distance by summing the distances of all these routes, while ensuring that every city is visited exactly once across all cars. Additionally, the genetic operators (like crossover and mutation) would need to be adjusted to work with this multi-route structure, ensuring that the offspring remain valid. Essentially, this transforms the problem from a Traveling Salesman Problem (TSP) into a Vehicle Routing Problem (VRP).
+- To add more cars, we would change the solution representation so that each individual is a set of routes—one route per car—instead of a single route. 
+
+- The fitness function would then calculate the total distance by summing the distances of all these routes, while ensuring that every city is visited exactly once across all cars. 
+
+- Additionally, the genetic operators (like crossover and mutation) would need to be adjusted to work with this multi-route structure, ensuring that the offspring remain valid. 
+
+- Essentially, this transforms the problem from a **Traveling Salesman Problem (TSP)** into a **Vehicle Routing Problem (VRP)**.
