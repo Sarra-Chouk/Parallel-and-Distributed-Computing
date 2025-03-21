@@ -1,6 +1,6 @@
 # Description
 
-This project is Lab 01 from the DSAI3202 - Parallel and Distributed Computing course. It demonstrates how a single computational task performs under different execution strategies:
+This project is Lab 02 from the DSAI3202 - Parallel and Distributed Computing course. It demonstrates how a single computational task performs under different execution strategies:
 
 - Sequential
 - Multithreading
