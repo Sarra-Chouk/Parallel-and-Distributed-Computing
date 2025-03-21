@@ -1,4 +1,4 @@
-# **Conclusions for Squaring 10⁶ Integers**
+## **Conclusions for Squaring 10⁶ Integers**
 
 #### `Sequential Execution:`
 The sequential approach is extremely fast **(0.05 sec)** for squaring 10⁶ numbers because the computation itself is trivial.
@@ -15,7 +15,7 @@ This method suffers from **high overhead (107.75 sec)** compared to **Pool.map()
 
 ---
 
-# **Conclusions for Squaring 10⁷ Integers**
+## **Conclusions for Squaring 10⁷ Integers**
 
 #### `Sequential Execution:`
 The sequential approach remains extremely fast **(0.54 sec)** for squaring 10⁷ numbers because it avoids parallel overhead.
@@ -37,7 +37,7 @@ For squaring large numbers, **sequential execution is the fastest** due to minim
 
 ---
 
-# **Observations on Process Synchronization with Semaphores**
+## **Observations on Process Synchronization with Semaphores**
 
 #### `Handling More Processes Than Available Connections:`
 When more processes request connections than available, **extra processes wait** until a connection is released. This ensures **only 3 processes access the resource at a time** (according to my example).
