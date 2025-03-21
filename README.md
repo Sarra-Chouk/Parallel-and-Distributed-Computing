@@ -1,6 +1,6 @@
 ## **Sequential Version Conclusions**
 
-#### `Genetic Algorithm Explanation:
+#### `Genetic Algorithm Explanation:`
 The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to optimize a delivery route, minimizing the total travel distance. The algorithm follows these steps:
 
 `1. Initialization:`
