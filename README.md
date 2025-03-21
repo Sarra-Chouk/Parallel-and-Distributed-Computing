@@ -108,7 +108,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 ##### `Distribution using 2 machines:`
 
-- **Execution time:**  seconds
+- **Execution time:**  10.72 seconds (network latency)
 
 **- Command to run:**  mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine
 
@@ -116,7 +116,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - The distributed version on a single machine was significantly faster than the sequential version a 5.93 speedup and a 99% efficiency.
 
-- Running across two machines further reduced execution time to seconds.
+- Running across two machines also reduced execution time to 10.72 seconds compared to the sequential version.
 
 - This confirms that distributing the Genetic Algorithm effectively optimized performance.
 
