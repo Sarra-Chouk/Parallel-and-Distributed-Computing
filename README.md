@@ -51,7 +51,7 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 - **Execution time:** 61.50 seconds
 
-- **Command to run:**
+**Run using:**
 
 <pre><code>python main.py</code></pre>
 
