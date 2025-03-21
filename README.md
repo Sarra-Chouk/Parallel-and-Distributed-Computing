@@ -1,17 +1,17 @@
 ## **Sequential Version Conclusions**
 
-#### `Genetic Algorithm Explanation`
+#### `Genetic Algorithm Explanation:
 The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to optimize a delivery route, minimizing the total travel distance. The algorithm follows these steps:
 
-`1. Initialization`
+`1. Initialization:`
 - Loads a distance matrix representing travel costs between locations.
 
 - Defines key parameters such as population size (10000), mutation rate (0.1), number of generations (500), and stagnation limits (5).
 
-`2. Population Generation`
+`2. Population Generation:`
 - Creates an initial population of routes, ensuring uniqueness and validity.
 
-`3. Evolution Process`
+`3. Evolution Process:`
 - **Fitness Evaluation:** Computes the fitness of each route (fitness is defines as the shortest route).
 
 - **Stagnation Handling:** If no improvement is observed for 5 consecutive generations, a new population is generated while keeping the best solution.
@@ -22,12 +22,12 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 - **Replacement:** The worst-performing routes are replaced with new offspring.
 
-`4. Final Selection`
+`4. Final Selection:`
 - Identifies the best route in the final population and prints the best total travel distance.
 
 #### `Functions Completed:`
 
-`calculate_fitness`
+`calculate_fitness:`
 
 - Computes the total travel distance of a proposed delivery route.
 
@@ -35,7 +35,7 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 - Returns the negative of the total distance to align with the goal of minimizing distance (since GA selects based on maximum fitness).
 
-`select_in_tournament`
+`select_in_tournament:`
 
 - Implements tournament selection to pick individuals for crossover.
 
@@ -59,24 +59,24 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 ## **Parallel Version Conclusions**
 
-#### `Parallelization Approach`
+#### `Parallelization Approach:`
 The parallel implementation divides the **population** into multiple **chunks** and processes them concurrently using **multiprocessing**. Each chunk evolves independently using a Genetic Algorithm. 
 
 The key parallelized parts are:
 
-`1. Population Chunking`
+`1. Population Chunking:`
 - The full population of 10,000 routes is split into 24 chunks distributed across CPU cores.
 
-`2. Parallel Evolution of Chunks`
+`2. Parallel Evolution of Chunks:`
 - Each chunk is processed independently using Python’s multiprocessing Pool, running the **`evolve_chunk()`** function concurrently. The implementation uses **`starmap_async()`**, allowing for asynchronous execution of the function across multiple processes.
 
-`3. Independent Selection, Crossover, and Mutation`
+`3. Independent Selection, Crossover, and Mutation:`
 - Each chunk undergoes fitness evaluation, selection, crossover, and mutation separately, reducing computational bottlenecks.
 
-`4. Final Selection of the Best Solution`
+`4. Final Selection of the Best Solution:`
 - After processing all chunks, the best route is selected from the pool of optimized solutions.
 
-#### `Performance Metrics`
+#### `Performance Metrics:`
 
 - **Execution time:** 10.68 seconds
 
@@ -88,7 +88,7 @@ The key parallelized parts are:
 
 <pre><code>python main.py</code></pre>
 
-#### `Performance Analysis`
+#### `Performance Analysis:`
 
 - The parallel implementation significantly reduces execution time, achieving a 5.76 speedup.
 
@@ -100,31 +100,31 @@ The key parallelized parts are:
 
 ## **Distributed Version Conclusions**
 
-#### `Distribution Approach`
+#### `Distribution Approach:`
 
 To improve performance, the Genetic Algorithm was parallelized and distributed across 2 machines using MPI. The core approach involved:
 
-`1. Master-Worker Architecture`
+`1. Master-Worker Architecture:`
 
 - Rank 0 (Master Process) initializes the population, parameters, and distance matrix.
 
 - It then scatters population chunks to other MPI processes (workers) for parallel evolution.
 
-`2. Parallel Evolution of Chunks`
+`2. Parallel Evolution of Chunks:`
 
 - Each worker process evolves a subset of the population using multiprocessing `(Pool.starmap())`.
 
 - Selection, crossover, and mutation are applied independently per worker, reducing computation time.
 
-`3. Gathering and Selecting the Best Route`
+`3. Gathering and Selecting the Best Route:`
 
 - Each worker returns its best route after local evolution.
 
 - The master process collects all results and determines the global best route.
 
-#### `Performance Metrics`
+#### `Performance Metrics:`
 
-##### `Distribution using 1 machine`
+##### `Distribution using 1 machine:`
 
 - **Execution time:** 10.37 seconds
 
@@ -136,7 +136,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 <pre><code>mpirun -n 6 python main.py</code></pre>
 
-##### `Distribution using 2 machines`
+##### `Distribution using 2 machines:`
 
 - **Execution time:**  10.72 seconds (network latency)
 
@@ -144,7 +144,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 <pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine</code></pre>
 
-#### `Performance Analysis`
+#### `Performance Analysis:`
 
 - The distributed version on a single machine was significantly faster than the sequential version a 5.93 speedup and a 99% efficiency.
 
@@ -154,17 +154,17 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 ## **Improvements Done**
 
- **`Hyperparameter Tuning`**
+ **`Hyperparameter Tuning:`**
 
  - Different generation sizes were tested to balance between convergence speed and solution quality (exploration vs. exploitation trafe-offs).
 
- **`Nested Multiprocessing within Distributed Architecture`**
+ **`Nested Multiprocessing within Distributed Architecture:`**
 
  - The distributed implementation was enhanced by embedding multiprocessing inside each MPI worker process.
 
  - Each process distributed via MPI further parallelizes the evolution of its assigned chunk using multiple CPU cores.
 
- **`MPI Execution Separation`**
+ **`MPI Execution Separation:`**
 
  - To avoid performance issues, the main script separated the multiprocessing and MPI executions.
  
@@ -174,11 +174,11 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 ## **Extended Version Conclusions**
 
-#### `Extended Approach`
+#### `Extended Approach:`
 
 The distributed implementation was reused by adapting it to load the larger dataset **(city_distances_extended.csv)**.
 
-#### `Performance Metrics`
+#### `Performance Metrics:`
 
 - **Execution time:** 12.07 seconds
 
@@ -190,7 +190,7 @@ The distributed implementation was reused by adapting it to load the larger data
 
 <pre><code>mpirun -n 6 python main.py --mpi-extended</code></pre>
 
-#### `Performance Analysis`
+#### `Performance Analysis:`
 
 - The extended version demonstrated strong scalability and effective parallel utilization even with a larger dataset, achieving a speedup of 5.09 and an efficiency of 85%.
 
