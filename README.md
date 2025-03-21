@@ -26,9 +26,9 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 #### `Performance Analysis:`
 
-**Best total distance:** 1224.0
+- **Best total distance:** 1224.0
 
-**Execution time:** 25.02 seconds
+- **Execution time:** 25.02 seconds
 
 ---
 
@@ -53,14 +53,20 @@ The key parallelized parts are:
 
 #### `Performance Metrics:`
 
-**Best total distance:** 1380
+- **Best total distance:** 1380
 
-**Sequential execution time:** 25.02 seconds
+- **Sequential execution time:** 25.02 seconds
 
-**Parallel execution time:** 4.36 seconds
+ -**Parallel execution time:** 4.36 seconds
 
-**Speedup:** 5.73
+- **Speedup:** 5.73
 
-**Efficiency:** 0.96
+- **Efficiency:** 0.96
 
 #### `Performance Analysis:`
+
+- The parallel implementation significantly reduces execution time, achieving a 5.73 speedup.
+
+- The efficiency of 96% indicates that resources were utilized effectively, with minimal overhead.
+
+- The final solution's total distance was 1380.0, showing that the parallel approach maintained a comparable solution quality.
