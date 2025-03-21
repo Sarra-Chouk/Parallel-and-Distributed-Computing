@@ -5,7 +5,7 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 `1. Initialization:`
 - Loads a distance matrix representing travel costs between locations.
-- Defines key parameters such as population size, mutation rate, number of generations, and stagnation limits.
+- Defines key parameters such as population size (10000), mutation rate (0.1), number of generations (500), and stagnation limits (5).
 
 `2. Population Generation:`
 - Creates an initial population of routes, ensuring uniqueness and validity.
@@ -26,9 +26,9 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 #### `Performance Analysis:`
 
-- **Best total distance:** 1224.0
+- **Best total distance:** 1131.0
 
-- **Execution time:** 25.02 seconds
+- **Execution time:** 61.50 seconds
 
 ---
 
@@ -53,17 +53,15 @@ The key parallelized parts are:
 
 #### `Performance Metrics:`
 
-- **Sequential execution time:** 25.02 seconds
+- **Execution time:** 10.68 seconds
 
-- **Execution time:** 4.36 seconds
-
-- **Speedup:** 5.73
+- **Speedup:** 5.76
 
 - **Efficiency:** 96%
 
 #### `Performance Analysis:`
 
-- The parallel implementation significantly reduces execution time, achieving a 5.73 speedup.
+- The parallel implementation significantly reduces execution time, achieving a 5.76 speedup.
 
 - The efficiency of 96% indicates that resources were utilized effectively, with minimal overhead.
 
@@ -99,24 +97,44 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 ##### `Distribution using 1 machine:`
 
-- **Execution time:** 4.41 seconds
+- **Execution time:** 10.37 seconds
 
-- **Speedup:** 5.68
+- **Speedup:** 5.93
 
-- **Efficiency:** 95%
+- **Efficiency:** 99%
 
 ##### `Distribution using 2 machines:`
 
-- **Execution time:** 4.29 seconds
-
-- **Speedup:** 5.83
-
-- **Efficiency:** 97%
+- **Execution time:**  seconds
 
 #### `Performance Analysis:`
 
-- The distributed version on a single machine was significantly faster than the sequential version a 5.68 speedup and a 95% efficiency.
+- The distributed version on a single machine was significantly faster than the sequential version a 5.93 speedup and a 99% efficiency.
 
-- Running across two machines further reduced execution time, achieving a 5.83 speedup and a 97% efficiency.
+- Running across two machines further reduced execution time to seconds.
 
-- Distributing the Genetic Algorithm across multiple machines effectively optimized performance.
+- This confirms that distributing the Genetic Algorithm effectively optimized performance.
+
+---
+
+## **Extended Version Conclusions**
+
+#### `Extended Approach:`
+
+- The distributed implementation was reused by adapting it to load the larger dataset **(city_distances_extended.csv)** and executed using the command `mpirun -n 6 python main.py --mpi-extended`.
+
+#### `Performance Metrics:`
+
+- **Execution time:** 12.07 seconds
+
+- **Speedup:** 5.09
+
+- **Efficiency:** 85%
+
+#### `Performance Analysis:`
+
+- The extended version demonstrated strong scalability and effective parallel utilization even with a larger dataset, achieving a speedup of 5.09 and an efficiency of 85%.
+
+#### `How can we add more cars to the problem?`
+
+- To add more cars, we would change the solution representation so that each individual is a set of routes—one route per car—instead of a single route. The fitness function would then calculate the total distance by summing the distances of all these routes, while ensuring that every city is visited exactly once across all cars. Additionally, the genetic operators (like crossover and mutation) would need to be adjusted to work with this multi-route structure, ensuring that the offspring remain valid. Essentially, this transforms the problem from a Traveling Salesman Problem (TSP) into a Vehicle Routing Problem (VRP).

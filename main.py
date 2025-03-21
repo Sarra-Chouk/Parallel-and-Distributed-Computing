@@ -3,10 +3,10 @@ import sys
 from mpi4py import MPI
 from src.sequential.genetic_algorithm_trial import run_genetic_algorithm
 from src.parallel.genetic_algorithm_trial import run_genetic_algorithm_parallel
-from src.distributed.oneMachine.genetic_algorithm_trial import run_distributed_genetic_algorithm_one
-from src.distributed.multipleMachines.genetic_algorithm_trial import run_distributed_genetic_algorithm_multiple
+from src.distributed.genetic_algorithm_trial import run_distributed_genetic_algorithm
 from src.extended.genetic_algorithm_trial import run_distributed_genetic_algorithm_extended
-   
+
+
 def main():
     """
     Main function to run:
@@ -39,56 +39,41 @@ def main():
         print(f"Speedup: {speedup_parallel:.2f}")
         print(f"Efficiency: {efficiency_parallel:.2f}\n")
     else:
+        # Determine total core count based on command-line flag.
+        # If '--multi-machine' flag is provided, 12 cores; otherwise, 6 cores.
+        total_cores = 12 if '--multi-machine' in sys.argv else 6
+
         # Distributed execution across multiple MPI processes.
         if rank == 0:
             print("\n===== Distributed Execution =====\n")
         comm.Barrier()
 
-        # Extended dataset branch:
+        # Check for the '--mpi-extended' flag to decide which dataset to use.
         if '--mpi-extended' in sys.argv:
             dist_start = time.time()
             run_distributed_genetic_algorithm_extended()
             comm.Barrier()
             dist_end = time.time()
             dist_time = dist_end - dist_start
-            # Baseline sequential time assumed as 61.5 seconds for the extended dataset.
+            # Baseline sequential time assumed as 25.02 seconds for speedup calculation.
             speedup_dist = 61.5 / dist_time
-            # If multi-machine flag is provided along with extended, assume 12 cores; otherwise, 6.
-            total_cores = 12 if '--multi-machine' in sys.argv else 6
             efficiency_dist = speedup_dist / total_cores
             if rank == 0:
                 print(f"\nTotal Distributed (Extended) Execution Time: {dist_time:.2f} seconds")
                 print(f"Speedup: {speedup_dist:.2f}")
                 print(f"Efficiency: {efficiency_dist:.2f}\n")
         else:
-            # Regular dataset branch:
-            if '--multi-machine' in sys.argv:
-                # Run multi-machine distributed version (using 12 cores total)
-                dist_start = time.time()
-                run_distributed_genetic_algorithm_multiple()
-                comm.Barrier()
-                dist_end = time.time()
-                dist_time = dist_end - dist_start
-                # Baseline sequential time: 61.5 seconds.
-                speedup_dist = 61.5 / dist_time
-                efficiency_dist = speedup_dist / 18
-                if rank == 0:
-                    print(f"\nTotal Distributed (Multiple Machines) Execution Time: {dist_time:.2f} seconds")
-                    print(f"Speedup: {speedup_dist:.2f}")
-                    print(f"Efficiency: {efficiency_dist:.2f}\n")
-            else:
-                # Run one-machine distributed version (using 6 cores)
-                dist_start = time.time()
-                run_distributed_genetic_algorithm_one()
-                comm.Barrier()
-                dist_end = time.time()
-                dist_time = dist_end - dist_start
-                speedup_dist = 61.5 / dist_time
-                efficiency_dist = speedup_dist / 6
-                if rank == 0:
-                    print(f"\nTotal Distributed Execution Time: {dist_time:.2f} seconds")
-                    print(f"Speedup: {speedup_dist:.2f}")
-                    print(f"Efficiency: {efficiency_dist:.2f}\n")
+            dist_start = time.time()
+            run_distributed_genetic_algorithm()
+            comm.Barrier()
+            dist_end = time.time()
+            dist_time = dist_end - dist_start
+            speedup_dist = 61.5 / dist_time
+            efficiency_dist = speedup_dist / total_cores
+            if rank == 0:
+                print(f"\nTotal Distributed Execution Time: {dist_time:.2f} seconds")
+                print(f"Speedup: {speedup_dist:.2f}")
+                print(f"Efficiency: {efficiency_dist:.2f}\n")
 
 if __name__ == "__main__":
     main()
