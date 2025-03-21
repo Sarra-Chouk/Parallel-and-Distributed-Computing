@@ -16,7 +16,7 @@ def run_genetic_algorithm():
     population_size = 10000
     num_tournaments = 4  # Number of tournaments to run
     mutation_rate = 0.1
-    num_generations = 200
+    num_generations = 500
     infeasible_penalty = 1e6  # Penalty for infeasible routes
     stagnation_limit = 5  # Number of generations without improvement before regeneration
 

@@ -68,7 +68,7 @@ def main():
             comm.Barrier()
             dist_end = time.time()
             dist_time = dist_end - dist_start
-            speedup_dist = 25.02 / dist_time
+            speedup_dist = 61.5 / dist_time
             efficiency_dist = speedup_dist / total_cores
             if rank == 0:
                 print(f"\nTotal Distributed Execution Time: {dist_time:.2f} seconds")

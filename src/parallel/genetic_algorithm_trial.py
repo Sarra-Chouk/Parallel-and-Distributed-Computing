@@ -97,7 +97,7 @@ def run_genetic_algorithm_parallel():
     num_chunks = 24
     chunk_size = population_size // num_chunks
     mutation_rate = 0.1
-    num_generations = 200
+    num_generations = 500
     stagnation_limit = 5
 
     # Initialize population and divide it into chunks

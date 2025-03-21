@@ -95,7 +95,7 @@ def run_distributed_genetic_algorithm():
         distance_matrix = pd.read_csv('dataset/city_distances.csv').to_numpy()
         num_nodes = distance_matrix.shape[0]
         population_size = 10000
-        num_generations = 200
+        num_generations = 500
         mutation_rate = 0.1
         stagnation_limit = 5
         num_chunks = 24
