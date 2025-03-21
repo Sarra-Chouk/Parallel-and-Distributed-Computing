@@ -12,6 +12,8 @@ The program measures and compares the performance improvements using key paralle
 - Efficiency
 - Amdahl’s Law
 - Gustafson’s Law
+  
+----
 
 ## Breakdown
 
@@ -24,6 +26,8 @@ The program:
 3. Runs the same task using threads and measures performance metrics.
    
 4. Runs it again using multiprocessing for comparison.
+
+---
 
 ## How to run
 
