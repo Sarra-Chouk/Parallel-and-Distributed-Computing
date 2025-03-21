@@ -27,7 +27,7 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 #### `Functions Completed:`
 
-`**calculate_fitness:**`
+`calculate_fitness:`
 
 - Computes the total travel distance of a proposed delivery route.
 
@@ -35,7 +35,7 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 
 - Returns the negative of the total distance to align with the goal of minimizing distance (since GA selects based on maximum fitness).
 
-`**select_in_tournament:**`
+`select_in_tournament:`
 
 - Implements tournament selection to pick individuals for crossover.
 
