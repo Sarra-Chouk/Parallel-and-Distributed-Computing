@@ -71,7 +71,7 @@ def main():
                 dist_time = dist_end - dist_start
                 # Baseline sequential time: 61.5 seconds.
                 speedup_dist = 61.5 / dist_time
-                efficiency_dist = speedup_dist / 12
+                efficiency_dist = speedup_dist / 18
                 if rank == 0:
                     print(f"\nTotal Distributed (Multiple Machines) Execution Time: {dist_time:.2f} seconds")
                     print(f"Speedup: {speedup_dist:.2f}")
