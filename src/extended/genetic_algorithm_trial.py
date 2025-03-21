@@ -77,7 +77,7 @@ def evolve_chunk(chunk, distance_matrix, num_generations, mutation_rate, stagnat
     best_distance = -calculate_fitness(best_solution, distance_matrix)
     return best_solution, best_distance
 
-def run_distributed_genetic_algorithm():
+def run_distributed_genetic_algorithm_extended():
     """
     Distributed Genetic Algorithm:
       - The master (rank 0) loads the dataset, creates the full population,
