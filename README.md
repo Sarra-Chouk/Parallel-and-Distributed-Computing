@@ -97,7 +97,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 #### `Performance Metrics:`
 
-##### `Distribution using 1 machine`
+##### `Distribution using 1 machine:`
 
 - **Execution time:** 4.41 seconds
 
@@ -105,7 +105,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Efficiency:** 95%
 
-##### `Distribution using 2 machine`
+##### `Distribution using 2 machines:`
 
 - **Execution time:** 4.29 seconds
 
