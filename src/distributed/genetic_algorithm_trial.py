@@ -133,7 +133,6 @@ def run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6
         all_best = comm.gather((local_best_fitness, local_best), root=0)
         if rank == 0:
             best_overall = min(all_best, key=lambda x: x[0])
-            print(f"After generation {seg_start + broadcast_interval}, global best fitness: {best_overall[0]}")
             # Update global_population to replicate the best candidate.
             global_population = [best_overall[1]] * population_size
         global_population = comm.bcast(global_population, root=0)
@@ -146,8 +145,4 @@ def run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6
         final_fitness = np.array([-calculate_fitness(route, distance_matrix) for route in global_population])
         best_idx = np.argmin(final_fitness)
         best_solution = global_population[best_idx]
-        print("MPI+Multiproc Best Solution:", best_solution)
-        print("MPI+Multiproc Total Distance:", -calculate_fitness(best_solution, distance_matrix))
-
-if __name__ == "__main__":
-    run_genetic_algorithm_mpi_multiproc(broadcast_interval=50, local_pool_size=6)
+        print("Distributed Total Distance:", -calculate_fitness(best_solution, distance_matrix))
