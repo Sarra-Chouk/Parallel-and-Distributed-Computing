@@ -1,7 +1,5 @@
 # Description
-This project is a simple, modular implementation of a machine learning pipeline developed for the course DSAI3202 - Parallel and Distributed Computing.
-
-It demonstrates how to structure an ML project into clearly defined stages using separate modules. 
+This project is Lab 01 from the DSAI3202 - Parallel and Distributed Computing course. It serves as a simple, modular implementation of a machine learning pipeline and demonstrates how to structure an ML project into clearly defined stages using separate modules. 
 
 The focus is not just on building a working model, but also on organizing code in a way that supports scalability, readability, and parallel development.
 
