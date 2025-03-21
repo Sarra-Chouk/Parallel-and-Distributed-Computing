@@ -3,11 +3,10 @@ import sys
 from mpi4py import MPI
 from src.sequential.genetic_algorithm_trial import run_genetic_algorithm
 from src.parallel.genetic_algorithm_trial import run_genetic_algorithm_parallel
-from src.distributed.genetic_algorithm_trial import (
-    run_distributed_genetic_algorithm,
-    run_distributed_genetic_algorithm_extended
-)
-
+from src.distributed.genetic_algorithm_trial import run_distributed_genetic_algorithm
+from src.extended.genetic_algorithm_trial import run_distributed_genetic_algorithm_extended
+   
+   
 def main():
     """
     Main function to run:
