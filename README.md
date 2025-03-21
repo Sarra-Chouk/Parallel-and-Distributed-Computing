@@ -104,7 +104,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Efficiency:** 99%
 
-**- Command to run:**  mpirun -n 6 python main.py
+- **Command to run:**  mpirun -n 6 python main.py
 
 ##### `Distribution using 2 machines:`
 
@@ -136,7 +136,7 @@ The distributed implementation was reused by adapting it to load the larger data
 
 - **Efficiency:** 85%
 
-**- Command to run:** mpirun -n 6 python main.py --mpi-extended
+- **Command to run:** mpirun -n 6 python main.py --mpi-extended
 
 #### `Performance Analysis:`
 
