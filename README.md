@@ -180,6 +180,8 @@ The distributed implementation was reused by adapting it to load the larger data
 
 #### `Performance Metrics:`
 
+- **Best total distance achieved:** 404,881.0
+
 - **Execution time:** 12.07 seconds
 
 - **Speedup:** 5.09
