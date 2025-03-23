@@ -40,7 +40,7 @@ For squaring large numbers, **sequential execution is the fastest** due to minim
 ## **Observations on Process Synchronization with Semaphores**
 
 #### `Handling More Processes Than Available Connections:`
-When more processes request connections than available, **extra processes wait** until a connection is released. This ensures **only 3 processes access the resource at a time** (according to my example).
+When more processes request connections than available, **extra processes wait** until a connection is released. This ensures **only 3 processes access the resource at a time** (according to my implementation example).
 
 #### `Role of Semaphore in Preventing Race Conditions:`
 Semaphores **restrict concurrent access** to match available connections. When a process **acquires a connection**, others **must wait** until it is released. This prevents **data corruption and conflicts**, ensuring **safe access**.
