@@ -1,39 +1,20 @@
-from mpi4py import MPI
-import numpy as np
-from src.square import square
-import time
-import random
+import sys
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
+def print_usage():
+    print("Usage: python main.py [squares|virus]")
 
-print(f"which process is this: {rank} and the size is {size}")
-
-if rank == 0:
-        numbers = np.arange(size, dtype="i")
-        print(numbers)
-else:
-    numbers = None
-
-number = np.zeros(1, dtype="i")
-comm.Scatter(numbers, number, root=0) 
-# Scatter --> like broadcasting, but one process distributes to all other processes NOT sends like in broadcasting
-# Each process take 1 [number] fron the vector
-print(numbers)
-print(number)
-
-result = square(number[0])
-print(result)
-time.sleep(random.randint(1, 10))
-
-request = comm.isend(result, dest=0, tag=rank) # this is non-blocking
-
-if rank == 0:
-    results = np.zeros(size, dtype="i")
-    for i in range(size):
-        results[i] = comm.irecv(source=i, tag=i).wait() # this is non-blocking also
-    print(f"The results are: {results}")
-
-# add this if using isend and irecv (non-bloacking)
-request.wait()
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print_usage()
+        sys.exit(1)
+    
+    simulation_type = sys.argv[1].lower()
+    if simulation_type == "squares":
+        from src import calculate_squares
+        calculate_squares.main()
+    elif simulation_type == "virus":
+        from src import virus_simulation
+        virus_simulation.main()
+    else:
+        print("Invalid simulation type. Choose 'squares' or 'virus'.")
+        print_usage()
