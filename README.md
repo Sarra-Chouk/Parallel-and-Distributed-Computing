@@ -88,6 +88,8 @@ The key parallelized parts are:
 
 <pre><code>python main.py</code></pre>
 
+![Parallel Performance Output](images/parallel.jpg)
+
 #### `Performance Analysis:`
 
 - The parallel implementation significantly reduces execution time, achieving a 5.76 speedup.
@@ -140,6 +142,10 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Execution time:** 5.27 seconds
 
+- **Speedup:** 11.66
+
+- **Efficiency:** 97%
+
 **`Run using:`**
 
 <pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine</code></pre>
@@ -148,7 +154,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - The distributed version on a single machine was significantly faster than the sequential version a 5.93 speedup and a 99% efficiency.
 
-- Running across two machines further reduced execution time to 5.27 seconds and recording a speedup of 11.66.
+- Running across two machines further reduced the execution time to 5.27 seconds and recording a speedup of 11.66 and an efficiency of 97%.
 
 - This confirms that distributing the Genetic Algorithm effectively among multiple machines optimizes performance.
 
@@ -180,17 +186,17 @@ The distributed implementation was reused by adapting it to load the larger data
 
 #### `Performance Metrics:`
 
-- **Best total distance achieved:** 404,881.0
+- **Best total distance achieved:** 404,494.0
 
-- **Execution time:** 12.07 seconds
+- **Execution time:** 6.15 seconds
 
-- **Speedup:** 5.09
+- **Speedup:** 10.00
 
-- **Efficiency:** 85%
+- **Efficiency:** 83%
 
 **`Run using:`**
 
-<pre><code>mpirun -n 6 python main.py --mpi-extended</code></pre>
+<pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --mpi-extended</code></pre>
 
 #### `Performance Analysis:`
 
