@@ -138,6 +138,8 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 <pre><code>mpirun -n 6 python main.py</code></pre>
 
+![Parallel Performance Output](images/oneMachine.jpg)
+
 ##### `Distribution using 2 machines:`
 
 - **Execution time:** 5.27 seconds
@@ -149,6 +151,8 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 **`Run using:`**
 
 <pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine</code></pre>
+
+![Parallel Performance Output](images/twoMachines.jpg)
 
 #### `Performance Analysis:`
 
@@ -197,6 +201,8 @@ The distributed implementation was reused by adapting it to load the larger data
 **`Run using:`**
 
 <pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --mpi-extended</code></pre>
+
+![Parallel Performance Output](images/extended.jpg)
 
 #### `Performance Analysis:`
 
