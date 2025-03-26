@@ -25,11 +25,35 @@ The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to opti
 `4. Final Selection:`
 - Identifies the best route in the final population and prints the best total travel distance.
 
+#### `Functions Completed:`
+
+`calculate_fitness:`
+
+- Computes the total travel distance of a proposed delivery route.
+
+- If the route includes disconnected nodes (represented with a distance of 100000), a large penalty is applied.
+
+- Returns the negative of the total distance to align with the goal of minimizing distance (since GA selects based on maximum fitness).
+
+`select_in_tournament:`
+
+- Implements tournament selection to pick individuals for crossover.
+
+- Randomly selects a subset of individuals.
+
+- From this subset, selects the individual with the highest fitness.
+
+- Appends the winning individual to the list of selected parents.
+
 #### `Performance Analysis:`
 
 - **Best total distance:** 1131.0
 
 - **Execution time:** 61.50 seconds
+
+**`Run using:`**
+
+<pre><code>python main.py</code></pre>
 
 ---
 
@@ -59,6 +83,10 @@ The key parallelized parts are:
 - **Speedup:** 5.76
 
 - **Efficiency:** 96%
+
+**`Run using:`**
+
+<pre><code>python main.py</code></pre>
 
 #### `Performance Analysis:`
 
@@ -104,13 +132,17 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 - **Efficiency:** 99%
 
-- **Command to run:**  mpirun -n 6 python main.py
+**`Run using:`**
+
+<pre><code>mpirun -n 6 python main.py</code></pre>
 
 ##### `Distribution using 2 machines:`
 
 - **Execution time:**  5.27 seconds
 
-**- Command to run:**  mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine
+**`Run using:`**
+
+<pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine</code></pre>
 
 #### `Performance Analysis:`
 
@@ -119,6 +151,24 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 - Running across two machines further reduced execution time to 5.27 seconds and recording a speedup of 11.66.
 
 - This confirms that distributing the Genetic Algorithm effectively among multiple machines optimizes performance.
+
+## **Improvements Done**
+
+ **`Hyperparameter Tuning:`**
+
+ - Different generation sizes were tested to balance between convergence speed and solution quality (exploration vs. exploitation trafe-offs).
+
+ **`Nested Multiprocessing within Distributed Architecture:`**
+
+ - The distributed implementation was enhanced by embedding multiprocessing inside each MPI worker process.
+
+ - Each process distributed via MPI further parallelizes the evolution of its assigned chunk using multiple CPU cores.
+
+ **`MPI Execution Separation:`**
+
+ - To avoid performance issues, the main script separated the multiprocessing and MPI executions.
+ 
+ - This prevented unecessary overhead from running multiprocessing under `mpirun` and ensured each method ran in its optimal environment.
 
 ---
 
@@ -130,13 +180,17 @@ The distributed implementation was reused by adapting it to load the larger data
 
 #### `Performance Metrics:`
 
+- **Best total distance achieved:** 404,881.0
+
 - **Execution time:** 12.07 seconds
 
 - **Speedup:** 5.09
 
 - **Efficiency:** 85%
 
-- **Command to run:** mpirun -n 6 python main.py --mpi-extended
+**`Run using:`**
+
+<pre><code>mpirun -n 6 python main.py --mpi-extended</code></pre>
 
 #### `Performance Analysis:`
 
