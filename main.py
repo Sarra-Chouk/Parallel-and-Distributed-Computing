@@ -41,7 +41,7 @@ def main():
     else:
         # Determine total core count based on command-line flag.
         # If '--multi-machine' flag is provided, 12 cores; otherwise, 6 cores.
-        total_cores = 12 if '--multi-machine' in sys.argv else 6
+        total_cores = 12 if ('--multi-machine' in sys.argv or '--mpi-extended' in sys.argv) else 6
 
         # Distributed execution across multiple MPI processes.
         if rank == 0:
