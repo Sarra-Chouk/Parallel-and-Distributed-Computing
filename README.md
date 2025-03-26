@@ -206,7 +206,7 @@ The distributed implementation was reused by adapting it to load the larger data
 
 #### `Performance Analysis:`
 
-- The extended version demonstrated strong scalability and effective parallel utilization even with a larger dataset, achieving a speedup of 5.09 and an efficiency of 85%.
+- The extended version demonstrated strong scalability and effective parallel utilization even with a larger dataset, achieving a speedup of 10.00 and an efficiency of 83%.
 
 #### `How can we add more cars to the problem?`
 
