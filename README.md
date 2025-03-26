@@ -138,7 +138,7 @@ To improve performance, the Genetic Algorithm was parallelized and distributed a
 
 ##### `Distribution using 2 machines:`
 
-- **Execution time:**  5.27 seconds
+- **Execution time:** 5.27 seconds
 
 **`Run using:`**
 
