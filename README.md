@@ -14,7 +14,9 @@ This ensures that in a simply connected maze (all walls are connected and there 
 
 The explorer starts facing right, initialized with:
 
-<pre><code>self.direction = (1, 0)  # Start facing right</code></pre>
+```bash
+self.direction = (1, 0)  # Start facing right</code></pre>
+```
 
 The decision-making logic is implemented in the `solve()` method using the next sequence of directional checks.
 
