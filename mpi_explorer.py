@@ -1,6 +1,7 @@
 from mpi4py import MPI
 import argparse
-from src.maze import create_maze
+import time
+from src.maze import create_maze, StaticMaze
 from src.explorer import Explorer
 
 # Initialize MPI
@@ -9,7 +10,7 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description="MPI Maze Explorer")
+parser = argparse.ArgumentParser(description="MPI Parallel Maze Explorer")
 parser.add_argument("--type", choices=["random", "static"], default="random",
                     help="Type of maze to generate (default: random)")
 parser.add_argument("--width", type=int, default=30,
@@ -24,34 +25,49 @@ maze = create_maze(args.width, args.height, args.type)
 # Create an explorer instance without visualization
 explorer = Explorer(maze, visualize=False)
 
-# Solve the maze; each process does this independently
+# Solve the maze
+start_time = time.time()
 time_taken, moves = explorer.solve()
+end_time = time.time()
 
-# Compute average moves per second (avoid division by zero)
-avg_moves_sec = (len(moves) / time_taken) if time_taken > 0 else 0
+# Calculate actual time taken (more accurate for MPI)
+actual_time = end_time - start_time
 
 # Prepare result dictionary for this process
 result = {
     "rank": rank,
-    "time_taken": time_taken,
+    "time_taken": actual_time,
     "moves": len(moves),
     "backtracks": explorer.backtrack_count,
-    "moves_per_sec": avg_moves_sec
+    "moves_per_sec": len(moves) / actual_time if actual_time > 0 else 0,
+    "maze_type": args.type
 }
 
 # Gather results from all processes at the root process (rank 0)
 all_results = comm.gather(result, root=0)
 
+# The root process prints a summary of the exploration results
 if rank == 0:
     print("\n=== MPI Parallel Maze Exploration Summary ===")
-    for res in all_results:
-        print(f"Explorer (Rank {res['rank']}): Time = {res['time_taken']:.2f} s, "
-              f"Moves = {res['moves']}, Backtracks = {res['backtracks']}, "
-              f"Average Moves/sec = {res['moves_per_sec']:.2f}")
+    print(f"Total explorers: {size}")
+    print(f"Maze type: {args.type}")
+    if args.type == "random":
+        print(f"Maze dimensions: {args.width}x{args.height}")
     
+    # Print individual results
+    for res in all_results:
+        print(f"\nExplorer (Rank {res['rank']}):")
+        print(f"  Time taken: {res['time_taken']:.4f} seconds")
+        print(f"  Total moves: {res['moves']}")
+        print(f"  Backtracks: {res['backtracks']}")
+        print(f"  Moves per second: {res['moves_per_sec']:.2f}")
+    
+    # Determine the best performer (one with the minimal number of moves)
     best = min(all_results, key=lambda r: r["moves"])
-    print(f"\nBest Explorer: Rank {best['rank']} with the following performance:")
-    print(f"Time Taken = {best['time_taken']:.2f} s")
-    print(f"Total Moves = {best['moves']}")
-    print(f"Backtracks = {best['backtracks']}")
-    print(f"Moves per Sec = {best['moves_per_sec']:.2f}\n")
+    
+    print("\n=== Best Explorer ===")
+    print(f"Rank: {best['rank']}")
+    print(f"Time taken: {best['time_taken']:.4f} seconds")
+    print(f"Total moves: {best['moves']}")
+    print(f"Backtracks: {best['backtracks']}")
+    print(f"Moves per second: {best['moves_per_sec']:.2f}")
