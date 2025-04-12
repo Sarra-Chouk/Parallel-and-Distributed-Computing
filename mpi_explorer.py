@@ -21,7 +21,7 @@ args = parser.parse_args()
 # Each process creates the same maze instance
 maze = create_maze(args.width, args.height, args.type)
 
-# Create an explorer instance without visualization
+# Create an explorer instance with visualization disabled
 explorer = Explorer(maze, visualize=False)
 
 # Solve the maze; each process does this independently with the enhanced algorithm

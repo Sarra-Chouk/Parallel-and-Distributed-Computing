@@ -7,7 +7,7 @@ import time
 import pygame
 from typing import Tuple, List
 from collections import deque
-from src.constants import BLUE, WHITE, CELL_SIZE, WINDOW_SIZE
+from .constants import BLUE, WHITE, CELL_SIZE, WINDOW_SIZE
 
 class Explorer:
     def __init__(self, maze, visualize: bool = False):
@@ -32,7 +32,12 @@ class Explorer:
         # Threshold for early abandonment (if path becomes excessively long)
         self.max_path_length = 200  # (This number can be adjusted experimentally)
         
-        if visualize:
+        # Failsafe iteration counter to prevent infinite loops
+        self.iteration_counter = 0
+        self.MAX_ITERATIONS = 10000  # Adjust according to expected maze complexity
+        
+        # Only initialize pygame if visualization is enabled
+        if self.visualize:
             pygame.init()
             self.screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
             pygame.display.set_caption("Maze Explorer - Automated Solving (Enhanced)")
@@ -148,7 +153,6 @@ class Explorer:
     def find_backtrack_path(self) -> List[Tuple[int, int]]:
         """Find a backtrack path by scanning through moves for a junction."""
         path = []
-        current_pos = (self.x, self.y)
         visited = set()
         # Iterate backwards over the moves to find a junction with multiple choices.
         for pos in reversed(self.moves):
@@ -186,8 +190,13 @@ class Explorer:
         if self.visualize:
             self.draw_state()
             
-        # Continue until exit is reached
+        # Continue until exit is reached or the iteration limit is exceeded
         while (self.x, self.y) != self.maze.end_pos:
+            self.iteration_counter += 1
+            if self.iteration_counter > self.MAX_ITERATIONS:
+                print("Exceeded maximum iterations without finding the exit.")
+                break
+
             # Early abandonment: if path becomes too long, force backtracking.
             if len(self.moves) >= self.max_path_length:
                 if not self.backtrack():
