@@ -10,7 +10,7 @@ This ensures that in a simply connected maze (all walls are connected and there 
 
 #### Implementation Analysis
 
-`Step 0: Initialization:`
+**`Step 0: Initialization:`**
 
 The explorer starts facing right, initialized with:
 
@@ -18,10 +18,9 @@ The explorer starts facing right, initialized with:
 
 The decision-making logic is implemented in the `solve()` method using the next sequence of directional checks.
 
-`Step 1: Turn Right and Move Forward If Possible`
+**`Step 1: Turn Right and Move Forward If Possible`**
 
-<pre><code>
-# Try to turn right first
+<pre><code># Try to turn right first
 self.turn_right()
 if self.can_move_forward():
     self.move_forward()
@@ -38,10 +37,9 @@ if self.can_move_forward():
 
 **This represents the core of the right-hand rule: always try the path to the right first.**
 
-`Step 2: If Not, Try Moving Forward (Original Direction)`
+**`Step 2: If Not, Try Moving Forward (Original Direction)`**
 
-<pre><code>
-# If we can't move right, try forward
+<pre><code># If we can't move right, try forward
 self.turn_left()
 if self.can_move_forward():
     self.move_forward()
@@ -58,10 +56,9 @@ if self.can_move_forward():
 
 **This fallback ensures the explorer continues forward if the right path is blocked.**
 
-`Step 3: If Still Blocked, Try Turning Left`
+**`Step 3: If Still Blocked, Try Turning Left`**
 
-<pre><code>
-# If we can't move forward, try left
+<pre><code># If we can't move forward, try left
 self.turn_left()
 if self.can_move_forward():
     self.move_forward()
@@ -76,10 +73,9 @@ if self.can_move_forward():
 
 **This allows it to explore side paths if both right and forward are blocked.**
 
-`Step 4: If All Directions Are Blocked, Turn Around`
+**`Step 4: If All Directions Are Blocked, Turn Around`**
 
-<pre><code>
-# If we can't move left, turn around
+<pre><code># If we can't move left, turn around
 self.turn_left()
 self.move_forward()
 visited.add((self.x, self.y))
@@ -101,7 +97,7 @@ It keeps track of the last three moves and checks if the same position is repeat
 
 #### Implementation Analysis
 
-`Step 0: Initialize a Move History Buffer`
+**`Step 0: Initialize a Move History Buffer`**
 
 <pre><code>self.move_history = deque(maxlen=3)  # Keep track of last 3 moves</code></pre>
 
@@ -113,10 +109,9 @@ It keeps track of the last three moves and checks if the same position is repeat
 
 **This is a memory-efficient way to monitor recent movements and detect cycles.**
 
-`Step 1: Update History Every Time the Explorer Moves`
+**`Step 1: Update History Every Time the Explorer Moves`**
 
-<pre><code>
-current_move = (self.x, self.y)
+<pre><code>current_move = (self.x, self.y)
 self.moves.append(current_move)
 self.move_history.append(current_move)
 </code></pre>
@@ -129,10 +124,9 @@ self.move_history.append(current_move)
 
 **This keeps the movement history always up-to-date with the most recent 3 steps.**
 
-`Step 2: Check if the Last 3 Moves Were the Same`
+**`Step 2: Check if the Last 3 Moves Were the Same`**
 
-<pre><code>
-def is_stuck(self) -> bool:
+<pre><code>def is_stuck(self) -> bool:
    """Check if the explorer is stuck in a loop."""
    if len(self.move_history) < 3:
       return False
@@ -156,10 +150,9 @@ The backtracking logic retraces steps to the last known position that had multip
 
 #### Implementation Analysis
 
-`Step 0: Find the Path to Go Back`
+**`Step 0: Find the Path to Go Back`**
 
-<pre><code>
-if not self.backtrack_path:
+<pre><code>if not self.backtrack_path:
    # If we don't have a backtrack path, find one
    self.backtrack_path = self.find_backtrack_path()
 </code></pre>
@@ -172,10 +165,9 @@ if not self.backtrack_path:
 
 **This ensures the explorer doesn’t just randomly walk backward but chooses a meaningful past location to return to.**
 
-`Step 1: Follow the Backtrack Path Step-by-Step`
+**`Step 1: Follow the Backtrack Path Step-by-Step`**
 
-<pre><code>
-if self.backtrack_path:
+<pre><code>if self.backtrack_path:
    # Move to the next position in the backtrack path
    next_pos = self.backtrack_path.pop()
    self.x, self.y = next_pos
@@ -195,10 +187,9 @@ if self.backtrack_path:
 
 **This is the actual reversal in progress: the explorer is walking back through a known path toward a better decision point.**
 
-`Step 2: How find_backtrack_path() Works`
+**`Step 2: How find_backtrack_path() Works`**
 
-<pre><code>
-for i in range(len(self.moves) - 1, -1, -1):
+<pre><code>for i in range(len(self.moves) - 1, -1, -1):
    pos = self.moves[i]
    ...
    if choices > 1:
@@ -215,10 +206,9 @@ for i in range(len(self.moves) - 1, -1, -1):
 
 **This logic prevents the explorer from endlessly backtracking.**
 
-`Step 3: Count Available Choices at a Position`
+**`Step 3: Count Available Choices at a Position`**
 
-<pre><code>
-def count_available_choices(self, pos):
+<pre><code>def count_available_choices(self, pos):
    ...
       if self.maze.grid[new_y][new_x] == 0:
          choices += 1
@@ -251,19 +241,19 @@ Below is a summary table of the recorded metrics:
 
 **Key Observations:**
 
-`1. Extremely Fast Solving Time`
+**`1. Extremely Fast Solving Time`**
 
 The explorer finished all mazes in near-instant time (≤ 0.01s). This confirms the lightweight nature of the algorithm and efficient execution.
 
-`2. Move Count Correlates with Maze Size`
+**`2. Move Count Correlates with Maze Size`**
 
 Larger mazes (e.g. 50x50 static) naturally required more moves. The number of steps increased proportionally to the complexity and area of the maze.
 
-`3. Zero Backtracking in All Runs`
+**`3. Zero Backtracking in All Runs`**
 
 The explorer successfully avoided all loops or dead ends, demonstrating the effectiveness of the right-hand rule in the tested mazes.
 
-`4. High Move Efficiency`
+**`4. High Move Efficiency`**
 
 The implementation is highly optimized for speed in automated mode, with average moves per second exceeding 200,000+.
 
