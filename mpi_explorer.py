@@ -27,7 +27,7 @@ explorer = Explorer(maze, visualize=False)
 # Solve the maze; each process does this independently
 time_taken, moves = explorer.solve()
 
-# Compute average moves per second (check for division by zero)
+# Compute average moves per second (avoid division by zero)
 avg_moves_sec = (len(moves) / time_taken) if time_taken > 0 else 0
 
 # Prepare result dictionary for this process
@@ -42,7 +42,6 @@ result = {
 # Gather results from all processes at the root process (rank 0)
 all_results = comm.gather(result, root=0)
 
-# The root process prints a summary of the exploration results
 if rank == 0:
     print("\n=== MPI Parallel Maze Exploration Summary ===")
     for res in all_results:
@@ -50,10 +49,9 @@ if rank == 0:
               f"Moves = {res['moves']}, Backtracks = {res['backtracks']}, "
               f"Average Moves/sec = {res['moves_per_sec']:.2f}")
     
-    # Determine the best performer (one with the minimal number of moves)
     best = min(all_results, key=lambda r: r["moves"])
     print(f"\nBest Explorer: Rank {best['rank']} with the following performance:")
-    print(f"Time Taken     = {best['time_taken']:.2f} s")
-    print(f"Total Moves    = {best['moves']}")
-    print(f"Backtracks     = {best['backtracks']}")
-    print(f"Moves per Sec  = {best['moves_per_sec']:.2f}\n")
+    print(f"Time Taken = {best['time_taken']:.2f} s")
+    print(f"Total Moves = {best['moves']}")
+    print(f"Backtracks = {best['backtracks']}")
+    print(f"Moves per Sec = {best['moves_per_sec']:.2f}\n")
