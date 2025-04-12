@@ -1,219 +1,270 @@
-## **Sequential Version Conclusions**
+# Maze Explorer Game Answers
 
-#### `Genetic Algorithm Explanation:`
-The script **genetic_algorithm_trial.py** implements a Genetic Algorithm to optimize a delivery route, minimizing the total travel distance. The algorithm follows these steps:
+## Question 1
 
-`1. Initialization:`
-- Loads a distance matrix representing travel costs between locations.
+### 1. Algorithm Used: The Right-Hand Rule
 
-- Defines key parameters such as population size (10000), mutation rate (0.1), number of generations (500), and stagnation limits (5).
+The explorer implements the Right-Hand Rule, a classic maze-solving strategy where the agent always keeps its right hand in contact with the wall. 
 
-`2. Population Generation:`
-- Creates an initial population of routes, ensuring uniqueness and validity.
+This ensures that in a simply connected maze (all walls are connected and there are no loops), the explorer will eventually reach the exit.
 
-`3. Evolution Process:`
-- **Fitness Evaluation:** Computes the fitness of each route (fitness is defines as the shortest route).
+#### Implementation Analysis
 
-- **Stagnation Handling:** If no improvement is observed for 5 consecutive generations, a new population is generated while keeping the best solution.
+`Step 0: Initialization:`
 
-- **Selection:** Uses a tournament selection mechanism to pick individuals for reproduction.
+The explorer starts facing right, initialized with:
 
-- **Crossover & Mutation:** Performs order crossover and mutation to create new routes while balancing exploitation and exploration.
+<pre><code>self.direction = (1, 0)  # Start facing right</code></pre>
 
-- **Replacement:** The worst-performing routes are replaced with new offspring.
+The decision-making logic is implemented in the `solve()` method using the next sequence of directional checks.
 
-`4. Final Selection:`
-- Identifies the best route in the final population and prints the best total travel distance.
+`Step 1: Turn Right and Move Forward If Possible`
 
-#### `Functions Completed:`
+<pre><code>
+# Try to turn right first
+self.turn_right()
+if self.can_move_forward():
+    self.move_forward()
+    visited.add((self.x, self.y))
+</code></pre>
 
-`calculate_fitness:`
+**Explanation:**
 
-- Computes the total travel distance of a proposed delivery route.
+- The explorer first turns 90° to the right.
 
-- If the route includes disconnected nodes (represented with a distance of 100000), a large penalty is applied.
+- It checks if the next cell in that direction is open.
 
-- Returns the negative of the total distance to align with the goal of minimizing distance (since GA selects based on maximum fitness).
+- If yes, it moves forward and records the new position as visited.
 
-`select_in_tournament:`
+**This represents the core of the right-hand rule: always try the path to the right first.**
 
-- Implements tournament selection to pick individuals for crossover.
+`Step 2: If Not, Try Moving Forward (Original Direction)`
 
-- Randomly selects a subset of individuals.
+<pre><code>
+# If we can't move right, try forward
+self.turn_left()
+if self.can_move_forward():
+    self.move_forward()
+    visited.add((self.x, self.y))
+</code></pre>
 
-- From this subset, selects the individual with the highest fitness.
+**Explanation:**
 
-- Appends the winning individual to the list of selected parents.
+- The explorer reverses its previous right turn to face forward again.
 
-#### `Performance Analysis:`
+- It checks if it can go straight.
 
-- **Best total distance:** 1131.0
+- If yes, it proceeds and records the position.
 
-- **Execution time:** 61.50 seconds
+**This fallback ensures the explorer continues forward if the right path is blocked.**
 
-**`Run using:`**
+`Step 3: If Still Blocked, Try Turning Left`
 
-<pre><code>python main.py</code></pre>
+<pre><code>
+# If we can't move forward, try left
+self.turn_left()
+if self.can_move_forward():
+    self.move_forward()
+    visited.add((self.x, self.y))
+</code></pre>
 
----
+**Explanation:**
 
-## **Parallel Version Conclusions**
+- The explorer turns 90° left (relative to its starting direction).
 
-#### `Parallelization Approach:`
-The parallel implementation divides the **population** into multiple **chunks** and processes them concurrently using **multiprocessing**. Each chunk evolves independently using a Genetic Algorithm. 
+- It checks and moves forward if that direction is valid.
 
-The key parallelized parts are:
+**This allows it to explore side paths if both right and forward are blocked.**
 
-`1. Population Chunking:`
-- The full population of 10,000 routes is split into 24 chunks distributed across CPU cores.
+`Step 4: If All Directions Are Blocked, Turn Around`
 
-`2. Parallel Evolution of Chunks:`
-- Each chunk is processed independently using Python’s multiprocessing Pool, running the **`evolve_chunk()`** function concurrently. The implementation uses **`starmap_async()`**, allowing for asynchronous execution of the function across multiple processes.
+<pre><code>
+# If we can't move left, turn around
+self.turn_left()
+self.move_forward()
+visited.add((self.x, self.y))
+</code></pre>
 
-`3. Independent Selection, Crossover, and Mutation:`
-- Each chunk undergoes fitness evaluation, selection, crossover, and mutation separately, reducing computational bottlenecks.
+**Explanation:**
 
-`4. Final Selection of the Best Solution:`
-- After processing all chunks, the best route is selected from the pool of optimized solutions.
+- A final `turn_left()`` results in a 180° turn from the starting direction (effectively turning around).
 
-#### `Performance Metrics:`
+- The explorer moves into the only remaining option — potentially backtracking.
 
-- **Execution time:** 10.68 seconds
+**This is a fail-safe to ensure the explorer doesn't get stuck and always keeps moving.**
 
-- **Speedup:** 5.76
+### 2. Loop Detection Mechanism
 
-- **Efficiency:** 96%
+To avoid getting stuck in cycles, the explorer uses a loop detection mechanism based on recent movement history.
 
-**`Run using:`**
+It keeps track of the last three moves and checks if the same position is repeated. If so, it assumes it's stuck in a loop and triggers backtracking.
 
-<pre><code>python main.py</code></pre>
+#### Implementation Analysis
 
-![Parallel Performance Output](images/parallel.jpg)
+`Step 0: Initialize a Move History Buffer`
 
-#### `Performance Analysis:`
+<pre><code>self.move_history = deque(maxlen=3)  # Keep track of last 3 moves</code></pre>
 
-- The parallel implementation significantly reduces execution time, achieving a 5.76 speedup.
+**Explanation:**
 
-- The efficiency of 96% indicates that resources were utilized effectively, with minimal overhead.
+- A deque (double-ended queue) is used to store the last 3 positions the explorer visited.
 
-- The final solution's total distance was 1380.0, showing that the parallel approach maintained a comparable solution quality.
+- `maxlen=3` means it will always store the most recent three moves only, automatically discarding the oldest one.
 
----
+**This is a memory-efficient way to monitor recent movements and detect cycles.**
 
-## **Distributed Version Conclusions**
+`Step 1: Update History Every Time the Explorer Moves`
 
-#### `Distribution Approach:`
+<pre><code>
+current_move = (self.x, self.y)
+self.moves.append(current_move)
+self.move_history.append(current_move)
+</code></pre>
 
-To improve performance, the Genetic Algorithm was parallelized and distributed across 2 machines using MPI. The core approach involved:
+**Explanation:**
 
-`1. Master-Worker Architecture:`
+- Every time the explorer moves, it records the new `(x, y)` position.
 
-- Rank 0 (Master Process) initializes the population, parameters, and distance matrix.
+- The `move_history` deque is updated so that the latest move is added to the memory.
 
-- It then scatters population chunks to other MPI processes (workers) for parallel evolution.
+**This keeps the movement history always up-to-date with the most recent 3 steps.**
 
-`2. Parallel Evolution of Chunks:`
+`Step 2: Check if the Last 3 Moves Were the Same`
 
-- Each worker process evolves a subset of the population using multiprocessing `(Pool.starmap())`.
+<pre><code>
+def is_stuck(self) -> bool:
+   """Check if the explorer is stuck in a loop."""
+   if len(self.move_history) < 3:
+      return False
+   # Check if the last 3 moves are the same
+   return (self.move_history[0] == self.move_history[1] == self.move_history[2])
+</code></pre>
 
-- Selection, crossover, and mutation are applied independently per worker, reducing computation time.
+**Explanation:**
 
-`3. Gathering and Selecting the Best Route:`
+- This function checks if the last 3 recorded positions are exactly the same.
 
-- Each worker returns its best route after local evolution.
+- If they are, it means the explorer is not making progress — it's “stuck”.
 
-- The master process collects all results and determines the global best route.
+**This simple check effectively detects loops when the explorer keeps going back and forth to the same point.**
 
-#### `Performance Metrics:`
+### 2. Backtracking Strategy
 
-##### `Distribution using 1 machine:`
+When the explorer detects it's stuck via loop detection, it initiates a backtracking routine to escape from dead ends or loops.
 
-- **Execution time:** 10.37 seconds
+The backtracking logic retraces steps to the last known position that had multiple unexplored paths, allowing the explorer to continue solving the maze without wasting time in cycles.
 
-- **Speedup:** 5.93
+#### Implementation Analysis
 
-- **Efficiency:** 99%
+`Step 0: Find the Path to Go Back`
 
-**`Run using:`**
+<pre><code>
+if not self.backtrack_path:
+   # If we don't have a backtrack path, find one
+   self.backtrack_path = self.find_backtrack_path()
+</code></pre>
 
-<pre><code>mpirun -n 6 python main.py</code></pre>
+**Explanation:**
 
-![Parallel Performance Output](images/oneMachine.jpg)
+- If a backtrack path is not already computed, the explorer calls `find_backtrack_path()` to generate one.
 
-##### `Distribution using 2 machines:`
+- This path leads back to a point where it had more than one choice (possible unexplored route).
 
-- **Execution time:** 5.27 seconds
+**This ensures the explorer doesn’t just randomly walk backward but chooses a meaningful past location to return to.**
 
-- **Speedup:** 11.66
+`Step 1: Follow the Backtrack Path Step-by-Step`
 
-- **Efficiency:** 97%
+<pre><code>
+if self.backtrack_path:
+   # Move to the next position in the backtrack path
+   next_pos = self.backtrack_path.pop()
+   self.x, self.y = next_pos
+   self.backtrack_count += 1
+   if self.visualize:
+      self.draw_state()
+   return True
+</code></pre>
 
-**`Run using:`**
+**Explanation:**
 
-<pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --multi-machine</code></pre>
+- If a valid backtrack path is available, the program:
 
-![Parallel Performance Output](images/twoMachines.jpg)
+   - Takes the next position from the path.
+   - Moves the explorer there.
+   - Increments the `backtrack_count` for tracking.
 
-#### `Performance Analysis:`
+**This is the actual reversal in progress: the explorer is walking back through a known path toward a better decision point.**
 
-- The distributed version on a single machine was significantly faster than the sequential version a 5.93 speedup and a 99% efficiency.
+`Step 2: How find_backtrack_path() Works`
 
-- Running across two machines further reduced the execution time to 5.27 seconds and recording a speedup of 11.66 and an efficiency of 97%.
+<pre><code>
+for i in range(len(self.moves) - 1, -1, -1):
+   pos = self.moves[i]
+   ...
+   if choices > 1:
+      return path[::-1]
+</code></pre>
 
-- This confirms that distributing the Genetic Algorithm effectively among multiple machines optimizes performance.
+**Explanation:**
 
-## **Improvements Done**
+- This method scans previous moves in reverse.
 
- **`Hyperparameter Tuning:`**
+- It looks for the most recent position where more than one move was possible (junction).
 
- - Different generation sizes were tested to balance between convergence speed and solution quality (exploration vs. exploitation trafe-offs).
+- When found, it returns a reversed path (so the explorer can walk back to it step-by-step).
 
- **`Nested Multiprocessing within Distributed Architecture:`**
+**This logic prevents the explorer from endlessly backtracking.**
 
- - The distributed implementation was enhanced by embedding multiprocessing inside each MPI worker process.
+`Step 3: Count Available Choices at a Position`
 
- - Each process distributed via MPI further parallelizes the evolution of its assigned chunk using multiple CPU cores.
+<pre><code>
+def count_available_choices(self, pos):
+   ...
+      if self.maze.grid[new_y][new_x] == 0:
+         choices += 1
+   return choices
+</code></pre>
 
- **`MPI Execution Separation:`**
+**Explanation:**
 
- - To avoid performance issues, the main script separated the multiprocessing and MPI executions.
- 
- - This prevented unecessary overhead from running multiprocessing under `mpirun` and ensured each method ran in its optimal environment.
+- This helper function checks how many open directions exist from a given cell.
 
----
+- It’s used by `find_backtrack_path()` to identify whether a position was a junction or just a dead end.
 
-## **Extended Version Conclusions**
+**This is the brain behind identifying strategic backtrack points.**
 
-#### `Extended Approach:`
+### 2. Performance Metrics Analysis
 
-The distributed implementation was reused by adapting it to load the larger dataset **(city_distances_extended.csv)**.
+At the end of the exploration, the explorer reports the following statistics via `print_statistics()`:
 
-#### `Performance Metrics:`
+`Total Time Taken:` Total duration from start to reaching the exit (in seconds).
 
-- **Best total distance achieved:** 404,494.0
+`Total Moves Made:` Number of steps taken by the explorer.
 
-- **Execution time:** 6.15 seconds
+`Backtrack Operations:` Number of times the explorer initiated a backtrack routine.
 
-- **Speedup:** 10.00
+`Average Moves/sec:` Efficiency of movement calculated as moves / time.
 
-- **Efficiency:** 83%
+Below is a summary table of the recorded metrics:
 
-**`Run using:`**
+![Auto Explorer Performance Output](images/metrics_q1.jpg)
 
-<pre><code>mpirun --hostfile src/distributed/machines.txt -np 12 -wdir ~/sarra python main.py --mpi-extended</code></pre>
+**Key Observations:**
 
-![Parallel Performance Output](images/extended.jpg)
+`1. Extremely Fast Solving Time`
 
-#### `Performance Analysis:`
+The explorer finished all mazes in near-instant time (≤ 0.01s). This confirms the lightweight nature of the algorithm and efficient execution.
 
-- The extended version demonstrated strong scalability and effective parallel utilization even with a larger dataset. It was able to be executed in only 6.15 seconds, achieving a speedup of 10.00 and an efficiency of 83%.
+`2. Move Count Correlates with Maze Size`
 
-#### `How can we add more cars to the problem?`
+Larger mazes (e.g. 50x50 static) naturally required more moves. The number of steps increased proportionally to the complexity and area of the maze.
 
-- To add more cars, we would change the solution representation so that each individual is a set of routes—one route per car—instead of a single route. 
+`3. Zero Backtracking in All Runs`
 
-- The fitness function would then calculate the total distance by summing the distances of all these routes, while ensuring that every city is visited exactly once across all cars. 
+The explorer successfully avoided all loops or dead ends, demonstrating the effectiveness of the right-hand rule in the tested mazes.
 
-- Additionally, the genetic operators (like crossover and mutation) would need to be adjusted to work with this multi-route structure, ensuring that the offspring remain valid. 
+`4. High Move Efficiency`
 
-- Essentially, this transforms the problem from a **Traveling Salesman Problem (TSP)** into a **Vehicle Routing Problem (VRP)**.
+The implementation is highly optimized for speed in automated mode, with average moves per second exceeding 200,000+.
+
+## Question 2
