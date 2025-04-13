@@ -1,7 +1,7 @@
 from mpi4py import MPI
 import argparse
 from src.maze import create_maze
-from src.right_explorer import EnhancedExplorer
+from src.enhanced_explorer import EnhancedExplorer
 
 # Initialize MPI
 comm = MPI.COMM_WORLD
@@ -29,14 +29,11 @@ explorer = EnhancedExplorer(maze, visualize=False)
 time_taken, moves = explorer.solve()
 
 # Evaluation metrics:
-#   - "moves": the length of the solution path.
-#   - "backtracks": the number of backtrack operations performed.
-#   - "average moves per second": moves divided by total time.
 moves_count = len(moves)
 backtracks = explorer.backtrack_count
 avg_moves_sec = (moves_count / time_taken) if time_taken > 0 else 0
 
-# Prepare the result dictionary for this MPI process.
+# Prepare result dictionary for this MPI process.
 result = {
     "rank": rank,
     "time_taken": time_taken,

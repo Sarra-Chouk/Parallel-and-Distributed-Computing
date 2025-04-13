@@ -1,18 +1,16 @@
 """
-Enhanced Maze Explorer module using a heuristic–driven right-hand rule.
+Enhanced Maze Explorer module using a heuristic–driven right-hand rule with improvements:
 
-Improvements over the original right-hand explorer:
- • Instead of a fixed turn order, candidate moves are evaluated using a scoring function.
-   The score is computed using the Manhattan distance from the candidate cell to the exit,
-   with an additional bonus for available choices (favoring junctions).
- • When no promising candidate move exists, targeted backtracking is used to revert to a previous junction.
- • An early-abandonment threshold limits runaway paths.
- 
-This headless version has all visualization code removed.
+1. Incorporates a penalty for revisited cells.
+2. Stores a more informed history at junctions.
+3. Uses dynamic thresholds to trigger backtracking.
+4. Returns more detailed junction information to guide backtracking.
+
+This version runs completely headless.
 """
 
 import time
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from collections import deque
 
 class EnhancedExplorer:
@@ -20,33 +18,39 @@ class EnhancedExplorer:
         self.maze = maze
         self.x, self.y = maze.start_pos
         self.direction = (1, 0)  # Start facing right
-        self.moves = []          # List of all moves taken
+        self.moves = []          # List of visited cells along the current path
         self.start_time = None
         self.end_time = None
-        # Even though a 'visualize' flag exists, it will be ignored in this headless version.
-        self.visualize = False
-        # Record a history of moves (used in case we need to backtrack)
+        self.visualize = False  # Visualization disabled
         self.move_history = deque(maxlen=5)
-        # Record how many times a cell has been visited (to avoid cycles)
         self.visited_count = {}
         self._update_visited((self.x, self.y))
-        # For targeted backtracking
-        self.backtrack_path = []
+        # For storing informed junction info (keyed by cell coordinate)
+        self.junction_info: Dict[Tuple[int, int], List[Tuple[float, str, Tuple[int, int], Tuple[int, int]]]] = {}
+        # For targeted backtracking history (list of junction positions)
+        self.junction_history = []
         self.backtrack_count = 0
-        # Limit the overall path length to force early reconsideration of choices.
-        self.max_path_length = 300
+        # Instead of a fixed max_path_length, we use a dynamic threshold:
+        # current_estimate = steps_so_far + ManhattanDistance. We track the best (lowest) estimate.
+        self.best_estimate = float('inf')
+        self.threshold_factor = 1.5  # If current estimate exceeds best_estimate*factor, trigger backtracking.
+        # Failsafe iteration counter
+        self.iteration_counter = 0
+        self.max_iterations = 100000
+
+        # Adjustable weights:
+        self.choice_bonus = 1.0   # bonus per available choice (higher => more attraction to junctions)
+        self.visit_penalty = 1.0  # penalty per revisit
 
     def _update_visited(self, pos: Tuple[int, int]):
         self.visited_count[pos] = self.visited_count.get(pos, 0) + 1
 
     def manhattan_distance(self, pos: Tuple[int, int]) -> int:
-        """Compute Manhattan distance from pos to the maze exit."""
         ex, ey = self.maze.end_pos
         x, y = pos
         return abs(ex - x) + abs(ey - y)
 
     def count_available_choices(self, pos: Tuple[int, int]) -> int:
-        """Return the number of valid moves from a given cell."""
         x, y = pos
         choices = 0
         for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
@@ -57,15 +61,10 @@ class EnhancedExplorer:
         return choices
 
     def is_valid_move(self, x: int, y: int) -> bool:
-        """Return True if (x,y) is within bounds and not a wall."""
         return (0 <= x < self.maze.width and 0 <= y < self.maze.height and 
                 self.maze.grid[y][x] == 0)
 
     def get_new_direction(self, rel_turn: str) -> Tuple[int, int]:
-        """
-        Given a relative turn ("right", "forward", "left", "back"),
-        compute the new direction vector.
-        """
         dx, dy = self.direction
         if rel_turn == "right":
             return (-dy, dx)
@@ -81,10 +80,9 @@ class EnhancedExplorer:
     def get_candidate_moves(self) -> List[Tuple[float, str, Tuple[int, int], Tuple[int, int]]]:
         """
         Evaluate moves in four relative directions.
-        Returns a list of tuples (score, rel_turn, new_direction, new_position).
+        Returns a list of tuples: (score, rel_turn, new_direction, new_position).
         Lower score indicates a more promising move.
-        The score is computed as:
-            score = ManhattanDistance - (0.5 * available_choices)
+        Score = ManhattanDistance - (choice_bonus * available_choices) + (visit_penalty * visited_count)
         """
         candidates = []
         for rel_turn in ["right", "forward", "left", "back"]:
@@ -92,14 +90,19 @@ class EnhancedExplorer:
             new_x = self.x + new_direction[0]
             new_y = self.y + new_direction[1]
             if self.is_valid_move(new_x, new_y):
-                score = self.manhattan_distance((new_x, new_y))
+                base = self.manhattan_distance((new_x, new_y))
                 choices = self.count_available_choices((new_x, new_y))
-                score -= choices * 0.5  # The weight is tunable
+                visits = self.visited_count.get((new_x, new_y), 0)
+                score = base - (self.choice_bonus * choices) + (self.visit_penalty * visits)
                 candidates.append((score, rel_turn, new_direction, (new_x, new_y)))
+                # If the candidate cell is a junction, store detailed info.
+                if choices > 1:
+                    self.junction_info.setdefault((new_x, new_y), []).append(
+                        (score, rel_turn, new_direction, (new_x, new_y))
+                    )
         return candidates
 
     def move_forward(self):
-        """Advance one step in the current direction and update internal state."""
         dx, dy = self.direction
         self.x += dx
         self.y += dy
@@ -107,41 +110,64 @@ class EnhancedExplorer:
         self.moves.append(new_pos)
         self.move_history.append(new_pos)
         self._update_visited(new_pos)
+        # Update junction history: if new_pos is a junction, store it.
+        if self.count_available_choices(new_pos) > 1:
+            self.junction_history.append(new_pos)
 
-    def find_backtrack_path(self) -> List[Tuple[int, int]]:
+    def dynamic_threshold_trigger(self) -> bool:
         """
-        Look backwards through the move history to find a cell with
-        more than one available move (a junction), and return a path
-        from the current position back to that junction.
+        Computes a cost estimate (steps so far + Manhattan distance).
+        Updates self.best_estimate. If the current estimate is considerably
+        worse than best_estimate (multiplied by threshold_factor), return True.
         """
-        path = []
-        seen = set()
-        for pos in reversed(self.moves):
-            if pos in seen:
-                continue
-            seen.add(pos)
-            path.append(pos)
-            if self.count_available_choices(pos) > 1:
-                return path[::-1]  # reverse the collected path
-        return path[::-1]
+        current_estimate = len(self.moves) + self.manhattan_distance((self.x, self.y))
+        if current_estimate < self.best_estimate:
+            self.best_estimate = current_estimate
+        # If current estimate is more than threshold_factor times the best seen, trigger backtracking.
+        return current_estimate > self.best_estimate * self.threshold_factor
+
+    def informed_backtrack(self) -> bool:
+        """
+        Use the stored junction_history to backtrack to a junction that
+        still has some unexplored candidate moves.
+        Returns True if a backtracking jump is made.
+        """
+        # Walk through stored junctions from latest to earliest.
+        while self.junction_history:
+            junc = self.junction_history.pop()
+            # Retrieve the stored candidate moves at this junction, if any.
+            if junc in self.junction_info and self.junction_info[junc]:
+                # Choose the candidate with best score among those not yet chosen.
+                # Note: you can refine this decision further.
+                candidate_list = self.junction_info[junc]
+                candidate_list.sort(key=lambda item: item[0])
+                best_candidate = candidate_list[0]
+                # Jump to that junction.
+                self.x, self.y = junc
+                self.backtrack_count += 1
+                # Remove used candidate.
+                candidate_list.pop(0)
+                return True
+        return False
 
     def backtrack(self) -> bool:
         """
-        Revert the explorer's position along a target backtrack path.
-        Increases the backtrack counter.
-        Returns True if backtracking was successfully performed.
+        Simple backtracking fallback: if no junction in the informed history is found,
+        revert one step (if available).
         """
-        if not self.backtrack_path:
-            self.backtrack_path = self.find_backtrack_path()
-        if self.backtrack_path:
-            next_pos = self.backtrack_path.pop(0)
-            self.x, self.y = next_pos
+        if self.moves:
+            # Remove the last move (simulate stepping back).
+            last = self.moves.pop()
             self.backtrack_count += 1
+            if self.moves:
+                self.x, self.y = self.moves[-1]
+            else:
+                # If no moves remain, reset to start.
+                self.x, self.y = self.maze.start_pos
             return True
         return False
 
     def print_statistics(self, time_taken: float):
-        """Print evaluation metrics for the exploration."""
         print("\n=== Enhanced Maze Exploration Statistics ===")
         print(f"Total time taken: {time_taken:.2f} seconds")
         print(f"Total moves made: {len(self.moves)}")
@@ -150,23 +176,15 @@ class EnhancedExplorer:
         print("============================================\n")
 
     def solve(self) -> Tuple[float, List[Tuple[int, int]]]:
-        """
-        Solve the maze using an enhanced right-hand rule algorithm.
-        The explorer chooses moves by evaluating candidate directions
-        with a heuristic score. When stuck or when the path exceeds a threshold,
-        targeted backtracking is used.
-        Returns a tuple (time_taken, moves) where moves is the list of visited cells.
-        """
         self.start_time = time.time()
-        iteration = 0
-        max_iterations = 100000  # Failsafe to prevent an infinite loop.
-        while (self.x, self.y) != self.maze.end_pos and iteration < max_iterations:
-            iteration += 1
-            # Early abandonment to prevent excessively long paths.
-            if len(self.moves) > self.max_path_length:
-                if not self.backtrack():
-                    self.direction = (-self.direction[0], -self.direction[1])
-                    self.move_forward()
+        self.best_estimate = len(self.moves) + self.manhattan_distance((self.x, self.y))
+        while (self.x, self.y) != self.maze.end_pos and self.iteration_counter < self.max_iterations:
+            self.iteration_counter += 1
+
+            # If dynamic threshold says we're on a high-cost branch, try informed backtracking.
+            if self.dynamic_threshold_trigger():
+                if not self.informed_backtrack():
+                    self.backtrack()
                 continue
 
             candidates = self.get_candidate_moves()
@@ -177,11 +195,10 @@ class EnhancedExplorer:
                 self.direction = best_candidate[2]
                 self.move_forward()
             else:
-                if not self.backtrack():
-                    self.direction = (-self.direction[0], -self.direction[1])
-                    self.move_forward()
+                if not self.informed_backtrack():
+                    self.backtrack()
 
-        if iteration >= max_iterations:
+        if self.iteration_counter >= self.max_iterations:
             print("Exceeded maximum iterations without finding the exit.")
         self.end_time = time.time()
         total_time = self.end_time - self.start_time
