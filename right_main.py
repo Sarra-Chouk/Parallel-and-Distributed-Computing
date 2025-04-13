@@ -9,7 +9,7 @@ rank = comm.Get_rank()
 
 # Parse command-line arguments.
 parser = argparse.ArgumentParser(
-    description="MPI Maze Solver using Enhanced (Right-hand) Explorer"
+    description="MPI Maze Solver using Enhanced (Right-hand) Explorer (headless)"
 )
 parser.add_argument("--type", choices=["random", "static"], default="random",
                     help="Type of maze to generate (default: random)")

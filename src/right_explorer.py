@@ -10,10 +10,8 @@ Improvements over the original right-hand explorer:
 """
 
 import time
-import pygame
 from typing import Tuple, List
 from collections import deque
-from .constants import BLUE, WHITE, CELL_SIZE, WINDOW_SIZE
 
 class EnhancedExplorer:
     def __init__(self, maze, visualize: bool = False):
@@ -23,7 +21,8 @@ class EnhancedExplorer:
         self.moves = []          # List of all moves taken
         self.start_time = None
         self.end_time = None
-        self.visualize = visualize
+        # Even though a 'visualize' flag exists, it will be ignored in this headless version.
+        self.visualize = False
         # Record a history of moves (used in case we need to backtrack)
         self.move_history = deque(maxlen=5)
         # Record how many times a cell has been visited (to avoid cycles)
@@ -34,12 +33,6 @@ class EnhancedExplorer:
         self.backtrack_count = 0
         # Limit the overall path length to force early reconsideration of choices.
         self.max_path_length = 300
-        
-        if self.visualize:
-            pygame.init()
-            self.screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
-            pygame.display.set_caption("Enhanced Maze Explorer")
-            self.clock = pygame.time.Clock()
 
     def _update_visited(self, pos: Tuple[int, int]):
         self.visited_count[pos] = self.visited_count.get(pos, 0) + 1
@@ -97,9 +90,7 @@ class EnhancedExplorer:
             new_x = self.x + new_direction[0]
             new_y = self.y + new_direction[1]
             if self.is_valid_move(new_x, new_y):
-                # Basic score based on Manhattan distance to goal
                 score = self.manhattan_distance((new_x, new_y))
-                # Reward positions that have more available choices (junctions)
                 choices = self.count_available_choices((new_x, new_y))
                 score -= choices * 0.5  # The weight is tunable
                 candidates.append((score, rel_turn, new_direction, (new_x, new_y)))
@@ -114,29 +105,7 @@ class EnhancedExplorer:
         self.moves.append(new_pos)
         self.move_history.append(new_pos)
         self._update_visited(new_pos)
-        if self.visualize:
-            self.draw_state()
-
-    def draw_state(self):
-        """Draw the maze, start/goal and the explorer's current position."""
-        self.screen.fill(WHITE)
-        for y in range(self.maze.height):
-            for x in range(self.maze.width):
-                if self.maze.grid[y][x] == 1:
-                    pygame.draw.rect(self.screen, (0, 0, 0),
-                                     (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        # Draw the start (green) and goal (red) points.
-        pygame.draw.rect(self.screen, (0, 255, 0),
-                         (self.maze.start_pos[0] * CELL_SIZE,
-                          self.maze.start_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        pygame.draw.rect(self.screen, (255, 0, 0),
-                         (self.maze.end_pos[0] * CELL_SIZE,
-                          self.maze.end_pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        # Draw the explorer (blue).
-        pygame.draw.rect(self.screen, BLUE,
-                         (self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        pygame.display.flip()
-        self.clock.tick(30)
+        # No visualization code.
 
     def find_backtrack_path(self) -> List[Tuple[int, int]]:
         """
@@ -167,8 +136,6 @@ class EnhancedExplorer:
             next_pos = self.backtrack_path.pop(0)
             self.x, self.y = next_pos
             self.backtrack_count += 1
-            if self.visualize:
-                self.draw_state()
             return True
         return False
 
@@ -194,7 +161,6 @@ class EnhancedExplorer:
             # Early abandonment to prevent excessively long paths.
             if len(self.moves) > self.max_path_length:
                 if not self.backtrack():
-                    # If backtracking fails, force a turnaround.
                     self.direction = (-self.direction[0], -self.direction[1])
                     self.move_forward()
                 continue
@@ -204,19 +170,14 @@ class EnhancedExplorer:
                 # Choose the candidate with the lowest score.
                 candidates.sort(key=lambda item: item[0])
                 best_candidate = candidates[0]
-                # Update current direction and move forward.
                 self.direction = best_candidate[2]
                 self.move_forward()
             else:
-                # No valid candidate moves found; trigger backtracking.
                 if not self.backtrack():
                     self.direction = (-self.direction[0], -self.direction[1])
                     self.move_forward()
 
         self.end_time = time.time()
         total_time = self.end_time - self.start_time
-        if self.visualize:
-            pygame.time.wait(2000)
-            pygame.quit()
         self.print_statistics(total_time)
         return total_time, self.moves
