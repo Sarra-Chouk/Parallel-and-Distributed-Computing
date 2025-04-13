@@ -7,6 +7,8 @@ Improvements over the original right-hand explorer:
    with an additional bonus for available choices (favoring junctions).
  • When no promising candidate move exists, targeted backtracking is used to revert to a previous junction.
  • An early-abandonment threshold limits runaway paths.
+ 
+This headless version has all visualization code removed.
 """
 
 import time
@@ -105,7 +107,6 @@ class EnhancedExplorer:
         self.moves.append(new_pos)
         self.move_history.append(new_pos)
         self._update_visited(new_pos)
-        # No visualization code.
 
     def find_backtrack_path(self) -> List[Tuple[int, int]]:
         """
@@ -157,7 +158,10 @@ class EnhancedExplorer:
         Returns a tuple (time_taken, moves) where moves is the list of visited cells.
         """
         self.start_time = time.time()
-        while (self.x, self.y) != self.maze.end_pos:
+        iteration = 0
+        max_iterations = 100000  # Failsafe to prevent an infinite loop.
+        while (self.x, self.y) != self.maze.end_pos and iteration < max_iterations:
+            iteration += 1
             # Early abandonment to prevent excessively long paths.
             if len(self.moves) > self.max_path_length:
                 if not self.backtrack():
@@ -177,6 +181,8 @@ class EnhancedExplorer:
                     self.direction = (-self.direction[0], -self.direction[1])
                     self.move_forward()
 
+        if iteration >= max_iterations:
+            print("Exceeded maximum iterations without finding the exit.")
         self.end_time = time.time()
         total_time = self.end_time - self.start_time
         self.print_statistics(total_time)

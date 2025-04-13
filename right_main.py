@@ -22,7 +22,7 @@ args = parser.parse_args()
 # Create a maze instance common to all processes.
 maze = create_maze(args.width, args.height, args.type)
 
-# Create an instance of EnhancedExplorer with visualization disabled.
+# Create an instance of EnhancedExplorer (headless).
 explorer = EnhancedExplorer(maze, visualize=False)
 
 # Solve the maze using the enhanced right-hand rule approach.
