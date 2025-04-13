@@ -1,7 +1,7 @@
 from mpi4py import MPI
 import argparse
 from src.maze import create_maze
-from src.bfs_solver import BFSSolver  # Import the BFS solver
+from src.bfs_explorer import BFSSolver
 
 # Initialize MPI
 comm = MPI.COMM_WORLD
@@ -21,14 +21,9 @@ args = parser.parse_args()
 # Create a maze instance common to all processes
 maze = create_maze(args.width, args.height, args.type)
 
-# Create a BFS solver instance and solve the maze.
+# Create a BFS solver instance and solve the maze
 solver = BFSSolver(maze)
 path, time_taken = solver.solve()
-
-# For consistency with the previous metrics:
-#   - "moves" is the length of the found path.
-#   - "backtracks" is not applicable for BFS, so we set it to 0.
-#   - "average moves per second" is computed as moves / time taken.
 
 moves = len(path) if path is not None else 0
 backtracks = 0  # BFS does not backtrack
@@ -53,7 +48,7 @@ if rank == 0:
               f"Moves = {res['moves']}, Backtracks = {res['backtracks']}, "
               f"Average Moves/sec = {res['moves_per_sec']:.2f}")
     
-    # Identify the best solver run based on the minimal number of moves.
+    # Identify the best solver run based on the minimal number of moves
     valid_results = [r for r in all_results if r['moves'] is not None]
     if valid_results:
         best = min(valid_results, key=lambda r: r["moves"])

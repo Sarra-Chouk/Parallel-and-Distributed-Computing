@@ -4,7 +4,7 @@ Main entry point for the maze runner game.
 
 import argparse
 from src.game import run_game
-from src.explorer import Explorer
+from src.bfs_explorer import Explorer
 
 
 def main():

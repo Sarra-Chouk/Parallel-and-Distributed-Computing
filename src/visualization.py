@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 from .constants import WINDOW_SIZE, CELL_SIZE, WHITE, BLACK, RED, GREEN, BLUE
-from .explorer import Explorer
+from .bfs_explorer import Explorer
 
 def visualize_maze(maze, screen):
     """

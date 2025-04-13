@@ -41,7 +41,7 @@ class BFSSolver:
             print("No path found!")
             return None, time.time() - start_time
 
-        # Reconstruct path by stepping backwards from goal.
+        # Reconstruct path by stepping backwards from goal
         current = self.goal
         path = []
         while current is not None:
