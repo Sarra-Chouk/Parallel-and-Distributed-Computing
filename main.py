@@ -1,5 +1,5 @@
 """
-Main entry point for the maze runner game (supports local and distributed execution).
+Main entry point for the maze runner game (supports MPI-based parallel execution).
 """
 
 import argparse
@@ -8,15 +8,14 @@ from src.maze import create_maze
 from src.right_explorer import Explorer as RightHandExplorer
 from src.bfs_explorer import BFSSolver
 from src.astar_explorer import AStarExplorer
-from src.game import run_game
 
 def main():
     # Initialize MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
-    # Argument parser setup
-    parser = argparse.ArgumentParser(description="Maze Runner Game with MPI Support")
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Maze Runner Game")
     parser.add_argument("--type", choices=["random", "static"], default="random",
                         help="Type of maze to generate")
     parser.add_argument("--width", type=int, default=30,
@@ -25,19 +24,17 @@ def main():
                         help="Maze height (ignored for static)")
     parser.add_argument("--auto", action="store_true",
                         help="Run automated maze solving")
-    parser.add_argument("--visualize", action="store_true",
-                        help="Enable Pygame visualization (only supported by right-hand explorer)")
     parser.add_argument("--explorer", choices=["right", "bfs", "astar"], default="right",
                         help="Which solver to use: 'right', 'bfs', or 'astar'")
     args = parser.parse_args()
 
     if args.auto:
-        # All processes generate the same maze for reproducibility
+        # All processes generate the same maze for consistency
         maze = create_maze(args.width, args.height, args.type)
 
-        # Select and run the appropriate explorer
+        # Choose and run the selected solver
         if args.explorer == "right":
-            explorer = RightHandExplorer(maze, visualize=args.visualize if rank == 0 else False)
+            explorer = RightHandExplorer(maze, visualize=False)
             time_taken, moves = explorer.solve()
             moves_count = len(moves)
             backtracks = explorer.backtrack_count
@@ -59,7 +56,7 @@ def main():
 
         avg_moves_sec = (moves_count / time_taken) if time_taken > 0 else 0
 
-        # Prepare MPI result dictionary
+        # MPI: gather results from all ranks
         result = {
             "rank": rank,
             "time_taken": time_taken,
@@ -67,11 +64,9 @@ def main():
             "backtracks": backtracks,
             "moves_per_sec": avg_moves_sec
         }
-
-        # Gather all results at root
         all_results = comm.gather(result, root=0)
 
-        # Summary output at rank 0
+        # Output the summary at rank 0
         if rank == 0:
             print(f"\n=== MPI Parallel {args.explorer.upper()} Maze Solver Summary ===")
             for res in all_results:
@@ -85,9 +80,6 @@ def main():
             print(f"Total Moves    = {best['moves']}")
             print(f"Backtracks     = {best['backtracks']}")
             print(f"Moves per Sec  = {best['moves_per_sec']:.2f}")
-    else:
-        # Interactive mode fallback (Pygame-based)
-        run_game(maze_type=args.type, width=args.width, height=args.height)
 
 if __name__ == "__main__":
     main()
