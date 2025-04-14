@@ -1,10 +1,9 @@
 """
 A* Explorer module (no visualization).
 
-This module implements the A* algorithm to find a path from the maze’s
-start position to the goal using Manhattan distance as the heuristic.
-It returns a tuple containing the solution path (list of cell coordinates)
-and the total time taken to compute the solution.
+Implements the A* algorithm for finding the shortest path from the
+maze's start position to the goal using Manhattan distance.
+Returns the path and total time taken.
 """
 
 import time
@@ -19,50 +18,46 @@ class AStarExplorer:
         self.height = maze.height
 
     def heuristic(self, a, b):
-        """Compute Manhattan distance between points a and b."""
+        """Return Manhattan distance between two points."""
         (x1, y1) = a
         (x2, y2) = b
         return abs(x1 - x2) + abs(y1 - y2)
 
     def reconstruct_path(self, came_from, current):
-        """Reconstructs the path from start to goal using the came_from map."""
+        """Build path by walking back from goal to start."""
         path = []
         while current is not None:
             path.append(current)
             current = came_from.get(current)
-        path.reverse()
-        return path
+        return path[::-1]  # Reverse to start from the beginning
 
     def solve(self):
         """
-        Execute A* search on the maze and return (path, time_taken).
-        If no path is found, returns (None, elapsed_time).
+        Run A* algorithm. Return (path, time_taken).
+        If no path found, return (None, time_taken).
         """
         start_time = time.time()
-        open_set = []
-        heapq.heappush(open_set, (0, self.start))
-        came_from = {self.start: None}
-        cost_so_far = {self.start: 0}
+        open_set = [(0, self.start)]  # Priority queue ordered by f = g + h
+        came_from = {self.start: None}  # To reconstruct path
+        cost_so_far = {self.start: 0}   # Tracks g cost
         found = False
 
         while open_set:
-            current_priority, current = heapq.heappop(open_set)
+            _, current = heapq.heappop(open_set)
+
             if current == self.goal:
                 found = True
                 break
 
             x, y = current
-            # Explore the four cardinal neighbors.
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 neighbor = (x + dx, y + dy)
-                # Check bounds.
                 if not (0 <= neighbor[0] < self.width and 0 <= neighbor[1] < self.height):
-                    continue
-                # Skip walls.
+                    continue  # Out of bounds
                 if self.maze.grid[neighbor[1]][neighbor[0]] == 1:
-                    continue
+                    continue  # Wall
 
-                new_cost = cost_so_far[current] + 1  # uniform step cost
+                new_cost = cost_so_far[current] + 1
                 if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
                     cost_so_far[neighbor] = new_cost
                     priority = new_cost + self.heuristic(neighbor, self.goal)
