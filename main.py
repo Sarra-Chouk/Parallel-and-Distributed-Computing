@@ -1,85 +1,123 @@
 """
-Main entry point for the maze runner game (supports MPI-based parallel execution).
+main.py
+
+Main entry point for the Maze Runner Game.
+This program can run automated maze exploration using one of the following algorithms:
+ - "right": the original right-hand rule explorer (from src/explorer.py)
+ - "bfs": using BFS (see bfs_explorer.py)
+ - "astar": using A* search (see astar_explorer.py)
+
+It also supports running in parallel using mpi4py. In parallel mode each MPI process runs the chosen
+explorer independently on the same maze (broadcasted from rank 0) and sends a summary of its performance.
+Rank 0 then prints all summaries and details of the best solver (one with the fewest moves).
+Note: Visualization is omitted because this is running on your VM.
 """
 
 import argparse
-from mpi4py import MPI
-from src.maze import create_maze
-from src.bfs_explorer import BFSSolver
-from src.astar_explorer import AStarExplorer
+import time
 
 def main():
-    # Initialize MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Maze Runner Game")
     parser.add_argument("--type", choices=["random", "static"], default="random",
-                        help="Type of maze to generate")
+                        help="Type of maze to generate (random or static)")
     parser.add_argument("--width", type=int, default=30,
-                        help="Maze width (ignored for static)")
+                        help="Width of the maze (default: 30, ignored for static mazes)")
     parser.add_argument("--height", type=int, default=30,
-                        help="Maze height (ignored for static)")
+                        help="Height of the maze (default: 30, ignored for static mazes)")
     parser.add_argument("--auto", action="store_true",
-                        help="Run automated maze solving")
-    parser.add_argument("--explorer", choices=["right", "bfs", "astar"], default="right",
-                        help="Which solver to use: 'right', 'bfs', or 'astar'")
+                        help="Run automated maze exploration")
+    parser.add_argument("--algorithm", choices=["right", "bfs", "astar"], default="right",
+                        help="Explorer algorithm to use: 'right' (right-hand rule), 'bfs', or 'astar'")
+    parser.add_argument("--parallel", action="store_true",
+                        help="Run explorers in parallel using mpi4py")
     args = parser.parse_args()
 
-    if args.auto:
-        # All processes generate the same maze for consistency
-        maze = create_maze(args.width, args.height, args.type)
+    if not args.auto:
+        # Run interactive game (preserving original structure)
+        from src.game import run_game
+        run_game(maze_type=args.type, width=args.width, height=args.height)
+        return
 
-        # Choose and run the selected solver
-        if args.explorer == "right":
-            from src.right_explorer import Explorer as RightHandExplorer
-            explorer = RightHandExplorer(maze, visualize=False)
-            time_taken, moves = explorer.solve()
-            moves_count = len(moves)
-            backtracks = explorer.backtrack_count
+    if args.parallel:
+        # Parallel (MPI) mode.
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        size = comm.Get_size()
 
-        elif args.explorer == "bfs":
-            solver = BFSSolver(maze)
-            path, time_taken = solver.solve()
-            moves_count = len(path) if path else 0
-            backtracks = 0
-
-        elif args.explorer == "astar":
-            solver = AStarExplorer(maze)
-            path, time_taken = solver.solve()
-            moves_count = len(path) if path else 0
-            backtracks = 0
-
-        else:
-            raise ValueError(f"Unsupported explorer type: {args.explorer}")
-
-        avg_moves_sec = (moves_count / time_taken) if time_taken > 0 else 0
-
-        # MPI: gather results from all ranks
-        result = {
-            "rank": rank,
-            "time_taken": time_taken,
-            "moves": moves_count,
-            "backtracks": backtracks,
-            "moves_per_sec": avg_moves_sec
-        }
-        all_results = comm.gather(result, root=0)
-
-        # Output the summary at rank 0
+        # Rank 0 creates the maze and broadcasts it to all processes.
         if rank == 0:
-            print(f"\n=== MPI Parallel {args.explorer.upper()} Maze Solver Summary ===")
-            for res in all_results:
-                print(f"Solver (Rank {res['rank']}): Time = {res['time_taken']:.4f} s, "
-                      f"Moves = {res['moves']}, Backtracks = {res['backtracks']}, "
-                      f"Average Moves/sec = {res['moves_per_sec']:.2f}")
+            from src.maze import create_maze
+            maze = create_maze(args.width, args.height, args.type)
+        else:
+            maze = None
+        maze = comm.bcast(maze, root=0)
 
-            best = min(all_results, key=lambda r: r["moves"])
-            print(f"\nBest Solver: Rank {best['rank']} with performance:")
+        # Select and initialize the chosen explorer algorithm.
+        if args.algorithm == "right":
+            from src.explorer import Explorer  # Your original right-hand explorer from src/explorer.py
+            explorer = Explorer(maze, visualize=False)
+        elif args.algorithm == "bfs":
+            from bfs_explorer import BFSExplorer
+            explorer = BFSExplorer(maze)
+        elif args.algorithm == "astar":
+            from astar_explorer import AStarExplorer
+            explorer = AStarExplorer(maze)
+        else:
+            raise ValueError("Unknown algorithm")
+
+        # Each process runs its solver.
+        time_taken, path = explorer.solve()
+        moves_count = len(path)
+        moves_per_sec = moves_count / time_taken if time_taken > 0 else 0
+
+        summary = {
+            'rank': rank,
+            'time_taken': time_taken,
+            'moves': moves_count,
+            'backtracks': getattr(explorer, 'backtracks', 0),
+            'moves_per_sec': moves_per_sec
+        }
+
+        all_summaries = comm.gather(summary, root=0)
+
+        if rank == 0:
+            print("\n=== Parallel Maze Exploration Summaries ===")
+            for s in all_summaries:
+                print(f"Rank {s['rank']}: Time Taken = {s['time_taken']:.4f} s, Total Moves = {s['moves']}, "
+                      f"Backtracks = {s['backtracks']}, Moves per Sec = {s['moves_per_sec']:.2f}")
+            best = min(all_summaries, key=lambda x: x['moves'])
+            print("\nBest Solver: Rank {} with performance:".format(best['rank']))
             print(f"Time Taken     = {best['time_taken']:.4f} s")
             print(f"Total Moves    = {best['moves']}")
             print(f"Backtracks     = {best['backtracks']}")
             print(f"Moves per Sec  = {best['moves_per_sec']:.2f}")
+    else:
+        # Non-parallel mode.
+        from src.maze import create_maze
+        maze = create_maze(args.width, args.height, args.type)
+        if args.algorithm == "right":
+            from src.explorer import Explorer
+            explorer = Explorer(maze, visualize=False)
+        elif args.algorithm == "bfs":
+            from bfs_explorer import BFSExplorer
+            explorer = BFSExplorer(maze)
+        elif args.algorithm == "astar":
+            from astar_explorer import AStarExplorer
+            explorer = AStarExplorer(maze)
+        else:
+            raise ValueError("Unknown algorithm")
+
+        time_taken, path = explorer.solve()
+        moves_count = len(path)
+        moves_per_sec = moves_count / time_taken if time_taken > 0 else 0
+
+        print(f"Maze solved in {time_taken:.4f} seconds")
+        print(f"Total Moves    = {moves_count}")
+        print(f"Backtracks     = {getattr(explorer, 'backtracks', 0)}")
+        print(f"Moves per Sec  = {moves_per_sec:.2f}")
+        if args.type == "static":
+            print("Note: Width and height arguments were ignored for the static maze")
 
 if __name__ == "__main__":
     main()

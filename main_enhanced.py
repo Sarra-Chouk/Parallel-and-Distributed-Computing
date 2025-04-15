@@ -8,7 +8,7 @@ Rank 0 acts as the coordinator; other ranks act as explorer agents.
 import argparse
 from mpi4py import MPI
 from src.maze import create_maze  # Assumes your maze module provides create_maze()
-from right_enhanced import TaskCoordinatorMPI, worker_loop
+from src.enhanced import TaskCoordinatorMPI, worker_loop
 
 def main():
     # Parse command-line arguments.

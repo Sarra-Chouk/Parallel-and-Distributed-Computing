@@ -1,74 +1,57 @@
 """
-A* Explorer module (no visualization).
-
-Implements the A* algorithm for finding the shortest path from the
-maze's start position to the goal using Manhattan distance.
-Returns the path and total time taken.
+This module implements the AStarExplorer class that solves the maze
+using an A* search algorithm with Manhattan distance as the heuristic.
 """
 
 import time
-import heapq
+from heapq import heappop, heappush
+from typing import List, Tuple
+
+def manhattan_distance(a: Tuple[int, int], b: Tuple[int, int]) -> float:
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 class AStarExplorer:
     def __init__(self, maze):
         self.maze = maze
         self.start = maze.start_pos
-        self.goal = maze.end_pos
-        self.width = maze.width
-        self.height = maze.height
+        self.end = maze.end_pos
+        self.path: List[Tuple[int, int]] = []
+        self.backtracks = 0  # Not applicable for A*
 
-    def heuristic(self, a, b):
-        """Return Manhattan distance between two points."""
-        (x1, y1) = a
-        (x2, y2) = b
-        return abs(x1 - x2) + abs(y1 - y2)
-
-    def reconstruct_path(self, came_from, current):
-        """Build path by walking back from goal to start."""
-        path = []
-        while current is not None:
-            path.append(current)
-            current = came_from.get(current)
-        return path[::-1]  # Reverse to start from the beginning
-
-    def solve(self):
-        """
-        Run A* algorithm. Return (path, time_taken).
-        If no path found, return (None, time_taken).
-        """
+    def solve(self) -> Tuple[float, List[Tuple[int, int]]]:
         start_time = time.time()
-        open_set = [(0, self.start)]  # Priority queue ordered by f = g + h
-        came_from = {self.start: None}  # To reconstruct path
-        cost_so_far = {self.start: 0}   # Tracks g cost
-        found = False
+        open_set = []
+        heappush(open_set, (0, self.start))
+        came_from = {}
+        g_score = {self.start: 0}
+        f_score = {self.start: manhattan_distance(self.start, self.end)}
 
         while open_set:
-            _, current = heapq.heappop(open_set)
-
-            if current == self.goal:
-                found = True
+            current = heappop(open_set)[1]
+            if current == self.end:
                 break
-
             x, y = current
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 neighbor = (x + dx, y + dy)
-                if not (0 <= neighbor[0] < self.width and 0 <= neighbor[1] < self.height):
-                    continue  # Out of bounds
-                if self.maze.grid[neighbor[1]][neighbor[0]] == 1:
-                    continue  # Wall
+                if (0 <= neighbor[0] < self.maze.width and 0 <= neighbor[1] < self.maze.height and
+                    self.maze.grid[neighbor[1]][neighbor[0]] == 0):
+                    tentative_g = g_score[current] + 1
+                    if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g
+                        f_score[neighbor] = tentative_g + manhattan_distance(neighbor, self.end)
+                        heappush(open_set, (f_score[neighbor], neighbor))
 
-                new_cost = cost_so_far[current] + 1
-                if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
-                    cost_so_far[neighbor] = new_cost
-                    priority = new_cost + self.heuristic(neighbor, self.goal)
-                    heapq.heappush(open_set, (priority, neighbor))
-                    came_from[neighbor] = current
-
+        if self.end in came_from or self.start == self.end:
+            current = self.end
+            path = []
+            while current is not None:
+                path.append(current)
+                current = came_from.get(current)
+            path.reverse()
+            self.path = path
+        else:
+            self.path = []
         end_time = time.time()
-
-        if not found:
-            print("A* Explorer: No path found!")
-            return None, end_time - start_time
-
-        path = self.reconstruct_path(came_from, self.goal)
-        return path, end_time - start_time
+        time_taken = end_time - start_time
+        return time_taken, self.path
