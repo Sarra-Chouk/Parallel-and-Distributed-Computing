@@ -1,4 +1,6 @@
-# Maze Explorer Game Answers
+# Maze Exploration Using Search Algorithms: Implementation, Analysis and Comparison
+
+---
 
 ## Question 1
 
@@ -271,6 +273,8 @@ The explorer successfully avoided all loops or dead ends, demonstrating the effe
 
 The implementation is highly optimized for speed in automated mode, with average moves per second exceeding 200,000+.
 
+---
+
 ## Question 2
 
 ### 1. Parallelization Strategy Overview
@@ -300,6 +304,8 @@ After solving, each process computes its own metrics (time, moves, efficiency) a
 **`4. Summary Reporting (Rank 0 Only)`**
 
 Rank 0 aggregates the results, displays a comparative summary, and highlights the best-performing explorer.
+
+---
 
 ## Question 3
 
@@ -338,6 +344,7 @@ All 5 parallel explorers reported identical move counts (1279) and zero backtrac
 ```bash
 mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/assignment2/main.py --type static --auto --parallel --algorithm right
 ```
+---
 
 ## Question 4
 
@@ -419,6 +426,8 @@ The A* explorer improves upon BFS by incorporating a heuristic — in this case,
 
 `Manhattan Distance:` Measures how far a point is from the goal by summing the absolute horizontal and vertical distances.
 
+---
+
 ## Question 5
 
 ### 1. Performance Comparison
@@ -481,7 +490,7 @@ To visually compare how each algorithm navigates the maze, the explored paths we
 
 - Demonstrates lack of global awareness and inefficient routing, even though the exit might be nearby.
 
-**BFS and A* Path**
+**BFS and A-star Path**
 
 ![BFS & A* Explorers Path](images/path_bfs_astar.jpg)
 
