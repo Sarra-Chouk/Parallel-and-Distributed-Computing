@@ -4,8 +4,8 @@ main.py
 Main entry point for the Maze Runner Game.
 This program can run automated maze exploration using one of the following algorithms:
  - "right": the original right-hand rule explorer (from src/explorer.py)
- - "bfs": using BFS (see bfs_explorer.py)
- - "astar": using A* search (see astar_explorer.py)
+ - "bfs": using BFS (see src/bfs_explorer.py)
+ - "astar": using A* search (see src/astar_explorer.py)
 
 It also supports running in parallel using mpi4py. In parallel mode each MPI process runs the chosen
 explorer independently on the same maze (broadcasted from rank 0) and sends a summary of its performance.
@@ -33,7 +33,7 @@ def main():
     args = parser.parse_args()
 
     if not args.auto:
-        # Run interactive game (preserving original structure)
+        # Run interactive game
         from src.game import run_game
         run_game(maze_type=args.type, width=args.width, height=args.height)
         return
@@ -55,13 +55,13 @@ def main():
 
         # Select and initialize the chosen explorer algorithm.
         if args.algorithm == "right":
-            from src.explorer import Explorer  # Your original right-hand explorer from src/explorer.py
+            from src.right_explorer import Explorer
             explorer = Explorer(maze, visualize=False)
         elif args.algorithm == "bfs":
-            from bfs_explorer import BFSExplorer
+            from src.bfs_explorer import BFSExplorer
             explorer = BFSExplorer(maze)
         elif args.algorithm == "astar":
-            from astar_explorer import AStarExplorer
+            from src.astar_explorer import AStarExplorer
             explorer = AStarExplorer(maze)
         else:
             raise ValueError("Unknown algorithm")
@@ -97,13 +97,13 @@ def main():
         from src.maze import create_maze
         maze = create_maze(args.width, args.height, args.type)
         if args.algorithm == "right":
-            from src.explorer import Explorer
+            from src.right_explorer import Explorer
             explorer = Explorer(maze, visualize=False)
         elif args.algorithm == "bfs":
-            from bfs_explorer import BFSExplorer
+            from src.bfs_explorer import BFSExplorer
             explorer = BFSExplorer(maze)
         elif args.algorithm == "astar":
-            from astar_explorer import AStarExplorer
+            from src.astar_explorer import AStarExplorer
             explorer = AStarExplorer(maze)
         else:
             raise ValueError("Unknown algorithm")

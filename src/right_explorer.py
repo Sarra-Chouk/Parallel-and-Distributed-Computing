@@ -20,6 +20,7 @@ class Explorer:
         self.move_history = deque(maxlen=3)  # Keep track of last 3 moves
         self.backtracking = False
         self.backtrack_path = []
+        
         self.backtrack_count = 0  # Count number of backtrack operations
         if visualize:
             pygame.init()
