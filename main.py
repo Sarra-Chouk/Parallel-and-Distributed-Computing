@@ -1,16 +1,14 @@
 """
-main.py
-
 Main entry point for the Maze Runner Game.
 This program can run automated maze exploration using one of the following algorithms:
- - "right": the original right-hand rule explorer (from src/explorer.py)
+ - "right": the original right-hand rule explorer (from src/right_explorer.py)
  - "bfs": using BFS (see src/bfs_explorer.py)
  - "astar": using A* search (see src/astar_explorer.py)
 
 It also supports running in parallel using mpi4py. In parallel mode each MPI process runs the chosen
 explorer independently on the same maze (broadcasted from rank 0) and sends a summary of its performance.
 Rank 0 then prints all summaries and details of the best solver (one with the fewest moves).
-Note: Visualization is omitted because this is running on your VM.
+Note: Visualization is omitted to be able to run the program on my VM.
 """
 
 import argparse
@@ -39,13 +37,13 @@ def main():
         return
 
     if args.parallel:
-        # Parallel (MPI) mode.
+        # Parallel (MPI) mode
         from mpi4py import MPI
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
         size = comm.Get_size()
 
-        # Rank 0 creates the maze and broadcasts it to all processes.
+        # Rank 0 creates the maze and broadcasts it to all processes
         if rank == 0:
             from src.maze import create_maze
             maze = create_maze(args.width, args.height, args.type)
@@ -53,7 +51,7 @@ def main():
             maze = None
         maze = comm.bcast(maze, root=0)
 
-        # Select and initialize the chosen explorer algorithm.
+        # Select and initialize the chosen explorer algorithm
         if args.algorithm == "right":
             from src.right_explorer import Explorer
             explorer = Explorer(maze, visualize=False)
@@ -66,7 +64,7 @@ def main():
         else:
             raise ValueError("Unknown algorithm")
 
-        # Each process runs its solver.
+        # Each process runs its solver
         time_taken, path = explorer.solve()
         moves_count = len(path)
         moves_per_sec = moves_count / time_taken if time_taken > 0 else 0
@@ -93,7 +91,7 @@ def main():
             print(f"Backtracks     = {best['backtracks']}")
             print(f"Moves per Sec  = {best['moves_per_sec']:.2f}")
     else:
-        # Non-parallel mode.
+        # Non-parallel mode
         from src.maze import create_maze
         maze = create_maze(args.width, args.height, args.type)
         if args.algorithm == "right":
