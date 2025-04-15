@@ -61,9 +61,6 @@ def main():
         elif args.algorithm == "astar":
             from src.astar_explorer import AStarExplorer
             explorer = AStarExplorer(maze)
-        elif args.algorithm == "rl":
-            from src.rl_explorer import RLExplorer
-            explorer = RLExplorer(maze)
         else:
             raise ValueError("Unknown algorithm")
 
@@ -106,9 +103,6 @@ def main():
         elif args.algorithm == "astar":
             from src.astar_explorer import AStarExplorer
             explorer = AStarExplorer(maze)
-        elif args.algorithm == "rl":
-            from src.rl_explorer import RLExplorer
-            explorer = RLExplorer(maze)
         else:
             raise ValueError("Unknown algorithm")
 

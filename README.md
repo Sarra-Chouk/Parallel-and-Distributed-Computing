@@ -369,11 +369,59 @@ BFS explores the maze in a proactive and systematic way by checking all possible
 
 A* is a goal-driven search algorithm that prioritizes paths based on both distance traveled and estimated distance to the goal. This allows it to efficiently guide the explorer toward the exit, avoiding unnecessary exploration.
 
-**`Enhancement 3. A* Search`**
+**`Enhancement 3. Hybrid Algorithm Assignment`**
+
+Instead of assigning the same exploration algorithm to all processes, a hybrid approach distributes different algorithms across multiple MPI ranks. This improves the diversity of exploration strategies and increases the chances of finding a shorter or more optimal route.
 
 ### 3. Implementation Analysis
 
-## Question 4
+To address the limitations of the right-hand explorer, two enhancements were implemented: Breadth-First Search (BFS) and A* Search to improve pathfinding efficiency.
+
+**`1. Breadth-First Search (BFS)`**
+
+The BFS explorer uses a queue to explore the maze in a level-by-level manner:
+
+- The explorer starts from the initial position and places it in a queue.
+
+- It then enters a loop where it dequeues the next position and checks whether it has reached the goal.
+
+- For each current position, it explores all four neighboring cells (up, down, left, right).
+
+- If a neighbor is valid (within bounds, not a wall, and unvisited), it is added to the queue for future exploration.
+
+- A dictionary `came_from` is used to track where each cell was reached from, allowing the path to be reconstructed once the goal is found.
+
+- Because BFS visits all nearest cells first before going deeper, it guarantees finding the shortest path without needing to backtrack.
+
+**`1. A* Search`**
+
+The A* explorer improves upon BFS by incorporating a heuristic — in this case, Manhattan distance — to prioritize nodes closer to the goal:
+
+- The explorer begins at the start position and places it into a priority queue `(open_set)`, prioritizing positions based on an estimated total cost.
+
+- At each step, it selects the position with the lowest `f-score` — a sum of the distance already traveled`(g_score)` and the estimated remaining distance to the goal (heuristic using Manhattan distance).
+
+- It then checks if the current position is the goal. If so, the search ends.
+
+- Otherwise, it evaluates all four neighboring cells. For each valid neighbor (not a wall), it calculates a new `g_score` (distance from start).
+
+- If this path to the neighbor is shorter than any previously known path, the neighbor is updated in the `came_from` map, and its new `f_score` is calculated and pushed into the `open_set`.
+
+- Once the goal is reached, the `came_from` map is used to reconstruct the optimal path.
+
+**A* Terminology Explained**
+
+`open_set:` A priority queue of positions to explore next, sorted by their f_score to allow the processing the most promising path first.
+
+`g_score:` The cost of the shortest path from the start node to the current node (i.e., actual distance traveled).
+
+`f_score:` The estimated total cost of the path through the current node — calculated as g_score + heuristic (Manhattan distance to goal).
+
+`Manhattan Distance:` Measures how far a point is from the goal by summing the absolute horizontal and vertical distances.
+
+## Question 5
+
+
 
 
 
