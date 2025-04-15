@@ -409,7 +409,7 @@ The A* explorer improves upon BFS by incorporating a heuristic — in this case,
 
 - Once the goal is reached, the `came_from` map is used to reconstruct the optimal path.
 
-**A* Terminology Explained**
+**Terminology Explained**
 
 `open_set:` A priority queue of positions to explore next, sorted by their f_score to allow the processing the most promising path first.
 
@@ -421,7 +421,92 @@ The A* explorer improves upon BFS by incorporating a heuristic — in this case,
 
 ## Question 5
 
+### 1. Performance Comparison
 
+This section compares the performance of the original Right-Hand Rule Explorer with the two enhanced algorithms — Breadth-First Search (BFS) and A* Search — using the static maze as a benchmark. Metrics were collected during parallel execution (5 processes) across 3 machines.
 
+**`BFS Performance Metrics`**
 
+![BFS Explorer Parallel Performance Output](images/metrics_bfs.jpg)
 
+- **Execution Time:** Completion time averaged around 0.0014 to 0.0025 seconds, which is impressively fast despite the algorithm's additional queue operations.
+    
+- **Moves Made:** All explorers completed the maze in 128 steps, indicating that BFS reliably finds the shortest possible path.
+
+- **Efficiency:** The best-performing process achieved ~92,198 moves/sec, indicating high computational throughput.
+
+- **Backtracking and Consistency:** All processes reported identical move counts and zero backtracks — confirming BFS's natural avoidance of loops and redundant movements (level-by-level exploration).
+
+**Command to Execute the Parallel BFS Explorer**
+
+```bash
+mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/assignment2/main.py --type static --auto --parallel --algorithm bfs
+```
+
+**`A* Performance Metrics`**
+
+![A* Explorer Parallel Performance Output](images/metrics_astar.jpg)
+
+- **Execution Time:** Time was marginally higher than BFS, averaging around 0.0015 to 0.0018 seconds, due to heuristic calculations (Manhattan distance).
+
+- **Moves Made:** Like BFS, A* also completed the maze in 128 steps, confirming it reached the optimal path.
+
+- **Efficiency:** Best performer reported ~85,380 moves/sec, slightly below BFS.
+
+- **Backtracking and Consistency:** A* also reported identical results across all processes, with zero backtracks. It does not rely on a backtracking mechanism as it always progresses forward using heuristic-guided decisions rather than reversing its path.
+
+**Command to Execute the Parallel A* Explorer**
+
+```bash
+mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/assignment2/main.py --type static --auto --parallel --algorithm astar
+```
+
+**`Findings Analysis`**
+
+- Both BFS and A* consistently solved the static maze using only 128 moves, whereas the right-hand explorer required 1279 moves, often circling the perimeter due to its fixed direction logic.
+
+- While all algorithms performed exceptionally fast in parallel, BFS slightly outperformed A* in moves per second, likely due to A*’s additional overhead for heuristic evaluations.
+
+- All three algorithms showed consistent results across all MPI processes, confirming their deterministic behaviors.
+
+**`Path Visualization`**
+
+To visually compare how each algorithm navigates the maze, the explored paths were rendered using `pygame` for the static maze (50x50). The final paths are highlighted in red, showing how each algorithm reached the goal.
+
+**Right-hand Rule Path**
+
+![Right Explorer Path](images/path_right.jpg)
+
+- The explorer follows a perimeter-heavy route, often circling walls before reaching the exit.
+
+- Demonstrates lack of global awareness and inefficient routing, even though the exit might be nearby.
+
+**BFS and A* Path**
+
+![BFS & A* Explorers Path](images/path_bfs_astar.jpg)
+
+- Both BFS and A* discover the optimal shortest path.
+
+- Their routes are direct, compact, and free of loops or unnecessary detours.
+
+**`Conclusion`**
+
+While the right-hand rule guarantees eventual exit, it lacks efficiency and adaptability. BFS ensures optimality through exhaustive search, and A* enhances efficiency by prioritizing goal-oriented paths. Both enhancements led to dramatic reductions in move count and higher computational efficiency.
+
+### 2. Trade-offs and Limitations
+
+**`Accuracy vs. Simplicity`**
+
+Algorithms like A* and BFS offer optimal paths but come with higher computational overhead compared to the simpler right-hand rule.
+
+**`Execution Speed vs. Search Quality:`**
+
+Right-hand rule executes quickly but often finds suboptimal paths. In contrast, A* and BFS may take slightly longer but guarantee optimality.
+
+**`Memory Efficiency vs. Global Awareness:`**
+
+The right-hand rule uses minimal memory but lacks global context. BFS and A* consume more memory to track visited nodes and path costs, enabling more informed decisions.
+
+**`Determinism vs. Exploration Diversity:`**
+
+All algorithms produced consistent results on the static maze, confirming their deterministic nature. However, assigning the same algorithm to all processes limits the diversity of search strategies. This highlights the potential value of the hybrid approach proposed in Enhancement 3, where different explorers run different algorithms in parallel.
