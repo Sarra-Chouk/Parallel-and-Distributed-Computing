@@ -480,7 +480,7 @@ mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/as
 
 To visually compare how each algorithm navigates the maze, the explored paths were rendered using `pygame` for the static maze (50x50). The final paths are highlighted in red, showing how each algorithm reached the goal.
 
-#### Right-hand Rule Path
+### Right-hand Rule Path
 
 ![Right Explorer Path](images/path_right.jpg)
 
@@ -488,7 +488,7 @@ To visually compare how each algorithm navigates the maze, the explored paths we
 
 - Demonstrates lack of global awareness and inefficient routing, even though the exit might be nearby.
 
-#### BFS and A-star Path
+### BFS and A-star Path
 
 ![BFS & A* Explorers Path](images/path_bfs_astar.jpg)
 
