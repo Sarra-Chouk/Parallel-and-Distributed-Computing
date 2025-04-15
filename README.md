@@ -18,8 +18,6 @@ The explorer starts facing right, initialized with:
 self.direction = (1, 0)  # Start facing right
 ```
 
-The decision-making logic is implemented in the `solve()` method using the next sequence of directional checks.
-
 **`Step 1: Turn Right and Move Forward If Possible`**
 
 ```bash
@@ -89,7 +87,7 @@ visited.add((self.x, self.y))
 
 **Explanation:**
 
-- A final `turn_left()`` results in a 180° turn from the starting direction (effectively turning around).
+- A final `turn_left()` results in a 180° turn from the starting direction (effectively turning around).
 
 - The explorer moves into the only remaining option — potentially backtracking.
 
@@ -193,9 +191,11 @@ if self.backtrack_path:
 
 - If a valid backtrack path is available, the program:
 
-   - Takes the next position from the path.
-   - Moves the explorer there.
-   - Increments the `backtrack_count` for tracking.
+   - **Retrieves the Next Step:** It pops the next position from the stored backtrack path.
+
+   - **Updates Position:** The explorer moves directly to that cell by updating its (x, y) coordinates.
+
+   - **Tracks Backtracking:** It increments the backtrack_count to record that a backtrack operation occurred.
 
 **This is the actual reversal in progress: the explorer is walking back through a known path toward a better decision point.**
 
@@ -261,7 +261,7 @@ The explorer finished all mazes in near-instant time (≤ 0.01s). This confirms 
 
 **`2. Move Count Correlates with Maze Size`**
 
-Larger mazes (e.g. 50x50 static) naturally required more moves. The number of steps increased proportionally to the complexity and area of the maze.
+Larger mazes (50x50 static) naturally required more moves. The number of steps increased proportionally to the complexity and area of the maze.
 
 **`3. Zero Backtracking in All Runs`**
 
@@ -277,7 +277,7 @@ The implementation is highly optimized for speed in automated mode, with average
 
 ### 1. Parallelization Strategy Overview
 
-- MPI4Py was used as the communication layer to run multiple explorer processes across 3 machines.
+- **MPI4Py** was used as the communication layer to run multiple explorer processes across 3 machines.
 
 - Each MPI process executes one instance of a selected maze-solving algorithm.
 
@@ -289,19 +289,19 @@ The implementation is highly optimized for speed in automated mode, with average
 
 **`1. Maze Generation (Rank 0 Only)`**
 
-The root process (rank 0) generates a single maze instance, ensuring all explorers solve the exact same problem.
+- The root process (rank 0) generates a single maze instance, ensuring all explorers solve the exact same problem.
 
 **`2. Explorer Execution (All Ranks)`**
 
-Each process runs the selected algorithm independently on the broadcasted maze, enabling concurrent exploration.
+- Each process runs the selected algorithm independently on the broadcasted maze, enabling concurrent exploration.
 
 **`3. Result Collection`**
 
-After solving, each process computes its own metrics (time, moves, efficiency) and sends them to rank 0.
+- After solving, each process computes its own metrics (time, moves, efficiency) and sends them to rank 0.
 
 **`4. Summary Reporting (Rank 0 Only)`**
 
-Rank 0 aggregates the results, displays a comparative summary, and highlights the best-performing explorer.
+- Rank 0 aggregates the results, displays a comparative summary, and highlights the best-performing explorer.
 
 ---
 
@@ -315,7 +315,7 @@ The **static maze** is used as the primary benchmark for comparison because:
 
 - This consistency ensures that all explorers are evaluated fairly on the same layout, complexity, and start/end points.
 
-### 2. Observations from Parallel Execution
+### 2. Observations from Parallel Execution of the Right-hand Rule Algorithm
 
 ![Right Explorer Parallel Performance Output](images/metrics_right.jpg)
 
@@ -323,11 +323,11 @@ The **static maze** is used as the primary benchmark for comparison because:
 
 **`Logic Remains the Same`**
 
-All 5 parallel explorers reported identical move counts (1279) and zero backtracks, confirming that parallel execution does not alter the logic of the algorithm.
+- All 5 parallel explorers reported identical move counts (1279) and zero backtracks, confirming that parallel execution does not alter the logic of the algorithm.
 
 **`Speed Improvement from Parallelization`**
 
-- The execution time decreased significantly from 0.01s to as low as 0.0013s due to each process running independently and leveraging separate CPU cores.
+- The execution time decreased significantly from 0.01s to as low as 0.0013s due to each process running independently and leveraging multiple CPU cores.
 
 - The moves per second metric surged (up to 960,000 moves/sec), as a result of the reduction in computation time.
 
@@ -354,11 +354,11 @@ The explorer always tries to turn right first, then forward, then left, and fina
 
 **`2. Ineffective Loop Handling`**
 
-Although a loop detection mechanism was implemented (`is_stuck()` using `move_history), it only triggers if the same position is repeated three times in a row. This is a reactive approach and does not proactively prevent inefficient revisits to the same regions.
+Although a loop detection mechanism was implemented (`is_stuck()` using `move_history`), it only triggers if the same position is repeated three times in a row. This is a reactive approach and does not proactively prevent inefficient revisits to the same regions.
 
 **`3. Naive Backtracking`**
 
-When stuck, the explorer attempts to backtrack using the find_backtrack_path() method. However, this backtracking only searches backward through the move history and selects the most recent position with multiple choices — even if it's far from optimal.
+When stuck, the explorer attempts to backtrack using the `find_backtrack_path()` method. However, this backtracking only searches backward through the move history and selects the most recent position with multiple choices — even if it's far from optimal.
 
 **`4. No Global Awareness`**
 
@@ -380,11 +380,11 @@ Instead of assigning the same exploration algorithm to all processes, a hybrid a
 
 ### 3. Implementation Analysis
 
-To address the limitations of the right-hand explorer, two enhancements were implemented: Breadth-First Search (BFS) and A* Search to improve pathfinding efficiency.
+To address the limitations of the right-hand explorer and improve pathfinding efficiency, two enhancements were implemented: Breadth-First Search (BFS) and A* Search.
 
 **`1. Breadth-First Search (BFS)`**
 
-The BFS explorer uses a queue to explore the maze in a level-by-level manner:
+The BFS explorer uses a queue to explore the maze in a **level-by-level manner**:
 
 - The explorer starts from the initial position and places it in a queue.
 
@@ -396,7 +396,7 @@ The BFS explorer uses a queue to explore the maze in a level-by-level manner:
 
 - A dictionary `came_from` is used to track where each cell was reached from, allowing the path to be reconstructed once the goal is found.
 
-- Because BFS visits all nearest cells first before going deeper, it guarantees finding the shortest path without needing to backtrack.
+-> Because BFS visits all nearest cells first before going deeper, it guarantees finding the shortest path without needing to backtrack.
 
 **`1. A* Search`**
 
