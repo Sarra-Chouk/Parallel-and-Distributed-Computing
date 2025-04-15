@@ -420,7 +420,7 @@ The A* explorer improves upon BFS by incorporating a heuristic — in this case,
 
 **`g_score:`** The cost of the shortest path from the start node to the current node (i.e., actual distance traveled).
 
-**`**f_score:`** The estimated total cost of the path through the current node — calculated as g_score + heuristic (Manhattan distance to goal).
+**`f_score:`** The estimated total cost of the path through the current node — calculated as g_score + heuristic (Manhattan distance to goal).
 
 **`Manhattan Distance:`** Measures how far a point is from the goal by summing the absolute horizontal and vertical distances.
 
