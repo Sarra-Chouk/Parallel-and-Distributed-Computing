@@ -5,7 +5,6 @@ Main entry point for the maze runner game (supports MPI-based parallel execution
 import argparse
 from mpi4py import MPI
 from src.maze import create_maze
-from src.right_explorer import Explorer as RightHandExplorer
 from src.bfs_explorer import BFSSolver
 from src.astar_explorer import AStarExplorer
 
@@ -34,6 +33,7 @@ def main():
 
         # Choose and run the selected solver
         if args.explorer == "right":
+            from src.right_explorer import Explorer as RightHandExplorer
             explorer = RightHandExplorer(maze, visualize=False)
             time_taken, moves = explorer.solve()
             moves_count = len(moves)
