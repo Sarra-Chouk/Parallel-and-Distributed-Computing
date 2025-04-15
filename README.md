@@ -404,7 +404,7 @@ The A* explorer improves upon BFS by incorporating a heuristic — in this case,
 
 - The explorer begins at the start position and places it into a priority queue `(open_set)`, prioritizing positions based on an estimated total cost.
 
-- At each step, it selects the position with the lowest `f-score` — a sum of the distance already traveled`(g_score)` and the estimated remaining distance to the goal (heuristic using Manhattan distance).
+- At each step, it chooses the position with the lowest `f-score`, which combines two values: the actual distance traveled from the start `(g_score)` and the estimated distance left to the goal (Manhattan distance).
 
 - It then checks if the current position is the goal. If so, the search ends.
 
@@ -416,13 +416,13 @@ The A* explorer improves upon BFS by incorporating a heuristic — in this case,
 
 **Terminology Explained**
 
-`open_set:` A priority queue of positions to explore next, sorted by their f_score to allow the processing the most promising path first.
+**`open_set:`** A priority queue of positions to explore next, sorted by their `f_score` to allow the processing the most promising path first.
 
-`g_score:` The cost of the shortest path from the start node to the current node (i.e., actual distance traveled).
+**`g_score:`** The cost of the shortest path from the start node to the current node (i.e., actual distance traveled).
 
-`f_score:` The estimated total cost of the path through the current node — calculated as g_score + heuristic (Manhattan distance to goal).
+**`**f_score:`** The estimated total cost of the path through the current node — calculated as g_score + heuristic (Manhattan distance to goal).
 
-`Manhattan Distance:` Measures how far a point is from the goal by summing the absolute horizontal and vertical distances.
+**`Manhattan Distance:`** Measures how far a point is from the goal by summing the absolute horizontal and vertical distances.
 
 ---
 
@@ -430,7 +430,9 @@ The A* explorer improves upon BFS by incorporating a heuristic — in this case,
 
 ### 1. Performance Comparison
 
-This section compares the performance of the original Right-Hand Rule Explorer with the two enhanced algorithms — Breadth-First Search (BFS) and A* Search — using the static maze as a benchmark. Metrics were collected during parallel execution (5 processes) across 3 machines.
+This section compares the performance of the original Right-Hand Rule Explorer with the two enhanced algorithms — Breadth-First Search (BFS) and A* Search — using the static maze as a benchmark. 
+
+Metrics were collected during parallel execution (5 processes) across 3 machines.
 
 **`BFS Performance Metrics`**
 
@@ -440,7 +442,7 @@ This section compares the performance of the original Right-Hand Rule Explorer w
     
 - **Moves Made:** All explorers completed the maze in 128 steps, indicating that BFS reliably finds the shortest possible path.
 
-- **Efficiency:** The best-performing process achieved ~92,198 moves/sec, indicating high computational throughput.
+- **Efficiency:** The best-performing process achieved 92,198 moves/sec, indicating high computational throughput.
 
 - **Backtracking and Consistency:** All processes reported identical move counts and zero backtracks — confirming BFS's natural avoidance of loops and redundant movements (level-by-level exploration).
 
@@ -458,11 +460,11 @@ mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/as
 
 - **Moves Made:** Like BFS, A* also completed the maze in 128 steps, confirming it reached the optimal path.
 
-- **Efficiency:** Best performer reported ~85,380 moves/sec, slightly below BFS.
+- **Efficiency:** Best performer reported 85,380 moves/sec, slightly below BFS.
 
 - **Backtracking and Consistency:** A* also reported identical results across all processes, with zero backtracks. It does not rely on a backtracking mechanism as it always progresses forward using heuristic-guided decisions rather than reversing its path.
 
-**Command to Execute the Parallel A* Explorer**
+**Command to Execute the Parallel A-star Explorer**
 
 ```bash
 mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/assignment2/main.py --type static --auto --parallel --algorithm astar
@@ -470,7 +472,7 @@ mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/as
 
 **`Findings Analysis`**
 
-- Both BFS and A* consistently solved the static maze using only 128 moves, whereas the right-hand explorer required 1279 moves, often circling the perimeter due to its fixed direction logic.
+- Both BFS and A* consistently solved the static maze using **only 128 moves**, whereas the right-hand explorer required 1279 moves, often circling the perimeter due to its fixed direction logic.
 
 - While all algorithms performed exceptionally fast in parallel, BFS slightly outperformed A* in moves per second, likely due to A*’s additional overhead for heuristic evaluations.
 
@@ -478,7 +480,9 @@ mpirun --hostfile machines.txt -np 5 -wdir ~/sarra/assignment2 python ~/sarra/as
 
 **`Path Visualization`**
 
-To visually compare how each algorithm navigates the maze, the explored paths were rendered using `pygame` for the static maze (50x50). The final paths are highlighted in red, showing how each algorithm reached the goal.
+To visually compare how each algorithm navigates the maze, the explored paths were rendered using `pygame` for the static maze (50x50). 
+
+The final paths are highlighted in red, showing how each algorithm reached the goal.
 
 ### Right-hand Rule Path
 
