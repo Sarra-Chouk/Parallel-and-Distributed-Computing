@@ -396,7 +396,7 @@ The BFS explorer uses a queue to explore the maze in a **level-by-level manner**
 
 - A dictionary `came_from` is used to track where each cell was reached from, allowing the path to be reconstructed once the goal is found.
 
--> Because BFS visits all nearest cells first before going deeper, it guarantees finding the shortest path without needing to backtrack.
+>> Because BFS visits all nearest cells first before going deeper, it guarantees finding the shortest path without needing to backtrack.
 
 **`1. A* Search`**
 
